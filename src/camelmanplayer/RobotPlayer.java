@@ -149,30 +149,59 @@ public strictfp class RobotPlayer {
     }
 
     // do the zig zag movements to scan 1/8 of a map
+    // TODO: factor out math functions to work for robots in other quadrants of map.
     void scanMap() {
+        // get starting location (E-center coordinates)
+        MapLocation ELoc = MapLocation();
+        int ELocx = ELoc.x;
+        int ELocy = ELoc.y;
 
         for (int i = 0; i < directions.length; i ++) {
             // current direction
             Direction direction = directions[i];
 
+            // TODO: maybe need to factor this move part out of the for loop?
             // first move one step forward in this direction
             tryMoveWithCatch(direction);
 
-            // turn left 45 degrees
+            //travel_distance = get travelled distance
+            // current location
+            MapLocation currLoc = MapLocation();
+            int currLocx = currLoc.x;
+            int currLocy = currLoc.y;
+            int travelDist = Math.sqrt((currLocx - ELocx)**2 + (currLocy - ELocy)**2);
+
+            // turn CCW 45 degrees
             int leftDirIdx = (i - 1) % directions.length;
 
             Direction newDir = directions[leftDirIdx];
 
-            // calculate the boundary coordinates
-            // TODO: do math
-            MapLocation destination = new MapLocation(0, 0);
+            // first boundary location
+            // TODO: need to change boundary calculation based on quadrant!!
+            int fstBoundx = currLocx + travelDist * Math.cos(45);
+            int fstBoundy = currLocy + travelDist * Math.sin(45);
+            MapLocation fstBound = new MapLocation(fstBoundx, fstBoundy);
+
+            // TODO optimization: have robot travel past boundary for overlap
 
             // keep moving until we reach the boundary
-            moveStraightLine(direction, destination);
+            moveStraightLine(newDir, fstBound);
             MapLocation adjacentLoc = rc.adjacentLocation(direction);
 
-            // turn right by 45 degrees
+            // turn CW by 135 degrees
             int rightDirIdx = (i + 2) % directions.length;
+
+            Direction newDir = directions[rightDirIdx];
+
+            // calculate the second boundary
+            //TODO: change based on quadrant!!
+            int yDiff = 2 * Math.abs(fstBoundy - ELocy);
+            int sndBoundy = fstBoundy - yDiff;
+            MapLocation sndBound = new MapLocation (fstBoundx, sndBoundy);
+            moveStraightLine(newDir, sndBound);
+
+            // robot should currently be at second bound
+            //next robot needs to return to line with either the same x or y as E-center.
 
             // then go all over again
         }
