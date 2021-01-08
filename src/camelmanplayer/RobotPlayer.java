@@ -2,9 +2,7 @@ package camelmanplayer;
 
 import battlecode.common.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -28,8 +26,6 @@ public strictfp class RobotPlayer {
 
     static int turnCount;
 
-    static List<MapLocation> path;
-
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * If this method returns, the robot dies!
@@ -40,7 +36,6 @@ public strictfp class RobotPlayer {
         // This is the RobotController object. You use it to perform actions from this robot,
         // and to get information on its current status.
         RobotPlayer.rc = rc;
-        RobotPlayer.path = new ArrayList<>();
 
         turnCount = 0;
 
@@ -112,20 +107,5 @@ public strictfp class RobotPlayer {
             rc.move(dir);
             return true;
         } else return false;
-    }
-
-    static void aStarPlanning(MapLocation destination) throws GameActionException {
-        HashMap<Direction, Integer> adjacentLocMap = new HashMap<>();
-
-        for (Direction direction: directions) {
-            MapLocation adjacentLoc = rc.adjacentLocation(direction);
-
-            if (adjacentLoc != null) {
-                double passability = rc.sensePassability(adjacentLoc);
-                int gCost = (int) (0.5 / passability)^2; // Convert passibility to disctance
-                int hCost = adjacentLoc.distanceSquaredTo(destination);
-                adjacentLocMap.put(direction, gCost + hCost);
-            }
-        }
     }
 }
