@@ -5,6 +5,7 @@ import battlecode.common.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -114,6 +115,14 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
+    void tryMoveWithCatch(Direction dir) {
+        try {
+            tryMove(dir);
+        } catch (GameActionException e) {
+            System.out.println("oops, failed to move");
+        }
+    }
+
     static void aStarPlanning(MapLocation destination) throws GameActionException {
         HashMap<Direction, Integer> adjacentLocMap = new HashMap<>();
 
@@ -126,6 +135,46 @@ public strictfp class RobotPlayer {
                 int hCost = adjacentLoc.distanceSquaredTo(destination);
                 adjacentLocMap.put(direction, gCost + hCost);
             }
+        }
+    }
+
+    void moveStraightLine(Direction direction, MapLocation destination) {
+        while (rc.getLocation() != destination) {
+            tryMoveWithCatch(direction);
+        }
+    }
+
+    void moveZigzag() {
+
+    }
+
+    // do the zig zag movements to scan 1/8 of a map
+    void scanMap() {
+
+        for (int i = 0; i < directions.length; i ++) {
+            // current direction
+            Direction direction = directions[i];
+
+            // first move one step forward in this direction
+            tryMoveWithCatch(direction);
+
+            // turn left 45 degrees
+            int leftDirIdx = (i - 1) % directions.length;
+
+            Direction newDir = directions[leftDirIdx];
+
+            // calculate the boundary coordinates
+            // TODO: do math
+            MapLocation destination = new MapLocation(0, 0);
+
+            // keep moving until we reach the boundary
+            moveStraightLine(direction, destination);
+            MapLocation adjacentLoc = rc.adjacentLocation(direction);
+
+            // turn right by 45 degrees
+            int rightDirIdx = (i + 2) % directions.length;
+
+            // then go all over again
         }
     }
 }
