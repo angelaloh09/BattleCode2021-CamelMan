@@ -32,4 +32,13 @@ This is the Battlecode 2021 scaffold, containing an `examplefuncsplayer`. Read h
     Runs a game with the settings in gradle.properties
 - `./gradlew update`
     Update to the newest version! Run every so often
+    
+### Becky's note
+run 
+```
+export JAVA_HOME=`/usr/libexec/java_home -v 1.8.0_271` 
+cd client
+open -a BattleCodeClient
+``` 
+in terminal
 
