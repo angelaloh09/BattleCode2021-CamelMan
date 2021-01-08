@@ -152,7 +152,7 @@ public strictfp class RobotPlayer {
     // TODO: factor out math functions to work for robots in other quadrants of map.
     void scanMap() {
         // get starting location (E-center coordinates)
-        MapLocation ELoc = MapLocation();
+        MapLocation ELoc = new MapLocation(0, 0); // PlaceHolder for E-center Loc
         int ELocx = ELoc.x;
         int ELocy = ELoc.y;
 
@@ -166,10 +166,10 @@ public strictfp class RobotPlayer {
 
             //travel_distance = get travelled distance
             // current location
-            MapLocation currLoc = MapLocation();
+            MapLocation currLoc = rc.getLocation();
             int currLocx = currLoc.x;
             int currLocy = currLoc.y;
-            int travelDist = Math.sqrt((currLocx - ELocx)**2 + (currLocy - ELocy)**2);
+            int travelDist = (int) Math.sqrt((currLocx - ELocx)^2 + (currLocy - ELocy)^2);
 
             // turn CCW 45 degrees
             int leftDirIdx = (i - 1) % directions.length;
@@ -178,8 +178,8 @@ public strictfp class RobotPlayer {
 
             // first boundary location
             // TODO: need to change boundary calculation based on quadrant!!
-            int fstBoundx = currLocx + travelDist * Math.cos(45);
-            int fstBoundy = currLocy + travelDist * Math.sin(45);
+            int fstBoundx = (int) (currLocx + travelDist * Math.cos(45));
+            int fstBoundy = (int) (currLocy + travelDist * Math.sin(45));
             MapLocation fstBound = new MapLocation(fstBoundx, fstBoundy);
 
             // TODO optimization: have robot travel past boundary for overlap
@@ -191,7 +191,7 @@ public strictfp class RobotPlayer {
             // turn CW by 135 degrees
             int rightDirIdx = (i + 2) % directions.length;
 
-            Direction newDir = directions[rightDirIdx];
+            newDir = directions[rightDirIdx];
 
             // calculate the second boundary
             //TODO: change based on quadrant!!

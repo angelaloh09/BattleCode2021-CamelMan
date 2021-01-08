@@ -21,33 +21,55 @@ public class AStarPath {
             Direction.NORTHWEST,
     };
 
+    /**
+     * Returns the shortest path from the current location to the destination.
+     * If the destination is out of the sensing range of the robot, it returns a path to the edge of the robot's
+     * sensing range with the lowest estimated distance to the destination.
+     *
+     * Implemented with reference of the tutorial: https://www.youtube.com/watch?v=-L-WgKMFuhE
+     * **/
     static List<MapLocation> aStarPlanning(RobotController rc, MapLocation destination) throws Exception {
         AStarPath.rc = rc;
         travelCostMap = new HashMap<>();
         AStarPath.destination = destination;
 
+        // Create empty open and closed sets.
         Set<MapLocation> open = new HashSet<>();
         Set<MapLocation> closed = new HashSet<>();
 
-        MapLocation currentLocation = rc.getLocation();
-        LocationInfo currentInfo = new LocationInfo(currentLocation, null);
-        travelCostMap.put(currentLocation, currentInfo);
-        open.add(currentLocation);
+        // Add the initial location to the open set and travelCostMap
+        MapLocation initLocation = rc.getLocation();
+        LocationInfo initLocationInfo = new LocationInfo(initLocation, null);
+        travelCostMap.put(initLocation, initLocationInfo);
+        open.add(initLocation);
 
         MapLocation current;
-
         while (true) {
+            // Choose the location of the lowest f_cost in the open set as current
             current = findLocationOfLowestCost(open, travelCostMap);
             open.remove(current);
             closed.add(current);
 
-            if (currentLocation.isWithinDistanceSquared(currentLocation, 20)) {
+            // If current is the destination or a MapLocaiton at the edge of the robot's sensing range, break the loop.
+            if (foundPath(current, initLocation)) {
                 break;
             }
             branchOut(current, open, closed);
         }
 
         return generatePath(current);
+    }
+
+    static boolean foundPath(MapLocation current, MapLocation initLocation) {
+        if (current == destination) return true;
+        int maxSquaredDistance;
+        switch (rc.getType()) {
+            case POLITICIAN: maxSquaredDistance = 20; break;
+            case SLANDERER: maxSquaredDistance = 15; break;
+            case MUCKRAKER: maxSquaredDistance = 35; break;
+            default: maxSquaredDistance = 0;
+        }
+        return !current.isWithinDistanceSquared(initLocation, maxSquaredDistance);
     }
 
     static List<MapLocation> generatePath(MapLocation end) {
