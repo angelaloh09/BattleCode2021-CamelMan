@@ -1,13 +1,10 @@
 package camelmanplayer;
 
 import battlecode.common.*;
-import camelmanplayer.AStarPath;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -32,6 +29,13 @@ public strictfp class RobotPlayer {
             Direction.WEST,
             Direction.NORTHWEST,
     };
+
+    enum WarPhase {
+        SEARCH,
+        CONQUER,
+        ATTACK,
+        DEFEND
+    }
 
     static final double[][] scanMoveLeftXYRatio = new double[][] {
             {-Math.sqrt(1/2), Math.sqrt(1/2)},
