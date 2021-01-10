@@ -28,7 +28,7 @@ public class AStarPath {
      *
      * Implemented with reference of the tutorial: https://www.youtube.com/watch?v=-L-WgKMFuhE
      * **/
-    static List<MapLocation> aStarPlanning(RobotController rc, MapLocation destination) throws Exception {
+    static LinkedList<MapLocation> aStarPlanning(RobotController rc, MapLocation destination) throws Exception {
         AStarPath.rc = rc;
         travelCostMap = new HashMap<>();
         AStarPath.destination = destination;
@@ -72,8 +72,8 @@ public class AStarPath {
         return !current.isWithinDistanceSquared(initLocation, maxSquaredDistance);
     }
 
-    static List<MapLocation> generatePath(MapLocation end) {
-        List<MapLocation> path = new LinkedList<>();
+    static LinkedList<MapLocation> generatePath(MapLocation end) {
+        LinkedList<MapLocation> path = new LinkedList<>();
 
         MapLocation location = end;
 

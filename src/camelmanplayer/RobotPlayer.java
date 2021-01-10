@@ -1,14 +1,20 @@
 package camelmanplayer;
 
 import battlecode.common.*;
+import camelmanplayer.AStarPath;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
+
+    public MapLocation tempDestination;
+
+    public MapLocation closestLocToDest;
 
     static final RobotType[] spawnableRobot = {
             RobotType.POLITICIAN,
@@ -27,7 +33,7 @@ public strictfp class RobotPlayer {
             Direction.NORTHWEST,
     };
 
-    static final double[][] scanFstMoveLeftXYRatio = new double[][] {
+    static final double[][] scanMoveLeftXYRatio = new double[][] {
             {-Math.sqrt(1/2), Math.sqrt(1/2)},
             {0, 1},
             {Math.sqrt(1/2), Math.sqrt(1/2)},
@@ -138,27 +144,23 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
-    static void aStarPlanning(MapLocation destination) throws GameActionException {
-        HashMap<Direction, Integer> adjacentLocMap = new HashMap<>();
-
-        for (Direction direction: directions) {
-            MapLocation adjacentLoc = rc.adjacentLocation(direction);
-
-            if (adjacentLoc != null) {
-                double passability = rc.sensePassability(adjacentLoc);
-                int gCost = (int) (0.5 / passability)^2; // Convert passibility to disctance
-                int hCost = adjacentLoc.distanceSquaredTo(destination);
-                adjacentLocMap.put(direction, gCost + hCost);
-            }
-        }
-    }
-
     void tryMoveWithCatch(Direction dir) {
         try {
             tryMove(dir);
-        } catch (GameActionException e) {
+        } catch (GameActionException cannotMove) {
+            System.out.println("oops, cannot move");
+
             // TODO: take the wall as a boundary
-            System.out.println("oops, just bumped into the wall");
+            MapLocation adjacentLoc = rc.adjacentLocation(dir);
+            RobotInfo rInfo;
+            try {
+                rInfo = rc.senseRobotAtLocation(adjacentLoc);
+                // TODO: process rInfo, either send to ECenter or immediately react
+            } catch (GameActionException noRobot){
+                System.out.println("oops, just bumped into the wall");
+
+            }
+
         }
     }
 
@@ -167,64 +169,77 @@ public strictfp class RobotPlayer {
         int currxDist = currLoc.x - destination.x;
         int curryDist = currLoc.y - destination.y;
         // while we haven't exceeded the destination, keep moving forward
-        while ((rc.getLocation().x - destination.x) / currxDist >= 0
+        while (rc.canMove(direction) &&
+                (rc.getLocation().x - destination.x) / currxDist >= 0
                 && (rc.getLocation().y - destination.y) / curryDist >= 0) {
             tryMoveWithCatch(direction);
-        }
-    }
-
-    void moveByDist(Direction direction, int distance) {
-        while (distance > 0) {
-            tryMoveWithCatch(direction);
-            distance -= 1;
         }
     }
 
 
     // scanning algorithm
 
+    boolean shouldKeepScan(MapLocation destination) {
+        boolean reachedDest = rc.getLocation().equals(destination);
+        return !reachedDest;
+    }
+
     /** let the bot make the first turn when it's scanning its section */
-    void scanFstMoveLeft(int i, int travelDist, Direction dir) {
-        int currLocx = rc.getLocation().x;
-        int currLocy = rc.getLocation().y;
+    void scanFstMoveLeft(int i, int travelDist) throws Exception {
+        MapLocation currLoc = rc.getLocation();
 
         // first left boundary location
-        int fstBoundx = (int) (currLocx + travelDist * scanFstMoveLeftXYRatio[i][0]);
-        int fstBoundy = (int) (currLocy + travelDist * scanFstMoveLeftXYRatio[i][1]);
-        MapLocation fstBound = new MapLocation(fstBoundx, fstBoundy);
+        int xDiff = (int) (travelDist * scanMoveLeftXYRatio[i][0]);
+        int yDiff = (int) (travelDist * scanMoveLeftXYRatio[i][1]);
+        MapLocation fstBound = currLoc.translate(xDiff, yDiff);
 
         // keep moving until we reach the boundary
-        moveToDestination(dir, fstBound);
+        // TODO: change the condition
+        while (!rc.getLocation().equals(fstBound)) {
+            // a list of locations to go to the location closest to the destination
+            LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, fstBound);
+            while (!locs.isEmpty()) {
+                // if we haven't reached the closest location, keep going
+                MapLocation head = locs.pop();
+                Direction nextDir = rc.getLocation().directionTo(head);
+                while (!tryMove(nextDir)) {
+                    // TODO: CHANGE THINGS WITH FIELDS
+                    // if cannot move this round
+                    tryMove(nextDir);
+                }
+            }
+        }
+
     }
 
     /** turn 135 degree CW and move the bot to the right boundary */
     void scanMoveRight(int i, MapLocation lastMainAxisLoc, Direction dir) {
-        int currLocx = rc.getLocation().x;
-        int currLocy = rc.getLocation().y;
+        MapLocation currLoc = rc.getLocation();
+        int currLocx = currLoc.x;
+        int currLocy = currLoc.y;
 
         // calculate the second boundary
-        int rightBoundx = (int) (currLocx + Math.abs(lastMainAxisLoc.x - currLocx) * scanMoveRightXYRatio[i][0]);
-        int rightBoundy = (int) (currLocy + Math.abs(lastMainAxisLoc.y - currLocy) * scanMoveRightXYRatio[i][1]);
-        MapLocation rightBound = new MapLocation (rightBoundx, rightBoundy);
+        int xDiff = (int) (Math.abs(lastMainAxisLoc.x - currLocx) * scanMoveRightXYRatio[i][0]);
+        int yDiff = (int) (Math.abs(lastMainAxisLoc.y - currLocy) * scanMoveRightXYRatio[i][1]);
+        MapLocation rightBound = currLoc.translate(xDiff, yDiff);
 
         moveToDestination(dir, rightBound);
     }
 
     /** turn 45 degree CCW and move the bot to the left boundary */
     void scanMoveLeft(int i, MapLocation ECenterLoc, Direction dir) {
-        int currLocx = rc.getLocation().x;
-        int currLocy = rc.getLocation().y;
+        MapLocation currLoc = rc.getLocation();
 
         // calculate the distance between the current location and the destination on th left boundary
-        int xDiff = Math.abs(currLocx - ECenterLoc.x);
-        int yDiff = Math.abs(currLocy - ECenterLoc.y);
-        int dist = (int) Math.sqrt((xDiff^2 + yDiff^2));
+        int xDiff = (int) (Math.abs(currLoc.x - ECenterLoc.x) * scanMoveLeftXYRatio[i][0]);
+        int yDiff = (int) (Math.abs(currLoc.y - ECenterLoc.y) * scanMoveLeftXYRatio[i][0]);
+        MapLocation destination = currLoc.translate(xDiff, yDiff);
 
-        moveByDist(dir, dist);
+        moveToDestination(dir, destination);
     }
 
     /** make the bot make zigzag movements while it's scanning its section */
-    void scanMoveZigzag(int fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) {
+    void scanMoveZigzag(int fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
         // left direction
         int leftDirIdx = (i - 1) % directions.length;
         Direction leftDir = directions[leftDirIdx];
@@ -234,7 +249,7 @@ public strictfp class RobotPlayer {
         Direction rightDir = directions[rightDirIdx];
 
         // move to the left boundary from the central line
-        scanFstMoveLeft(i, fstTravelDist, leftDir);
+        scanFstMoveLeft(i, fstTravelDist);
 
         // TODO: figure out the condition, could try editing tryMoveWithCatch()
         while (true) {
@@ -244,6 +259,7 @@ public strictfp class RobotPlayer {
             // then move left
             scanMoveLeft(i, ECenterLoc, leftDir);
         }
+
     }
 
     /** scan the entire map at the start of the game */
@@ -255,6 +271,7 @@ public strictfp class RobotPlayer {
         int ELocx = ECenterLoc.x;
         int ELocy = ECenterLoc.y;
 
+        // TODO: move code, this class only controls a single robot
         for (int i = 0; i < directions.length; i ++) {
             // current direction
             Direction direction = directions[i];
@@ -270,7 +287,12 @@ public strictfp class RobotPlayer {
             // the distance travelled from the starting point of the scan (E-Center)
             int fstTravelDist = (int) Math.sqrt((currLocx - ELocx)^2 + (currLocy - ELocy)^2);
 
-            scanMoveZigzag(fstTravelDist, i, rc.getLocation(), ECenterLoc);
+            try {
+                scanMoveZigzag(fstTravelDist, i, rc.getLocation(), ECenterLoc);
+            } catch (Exception e) {
+                // TODO: make the robot stop whenever an error occurs
+                System.out.println(e);
+            }
         }
     }
 }
