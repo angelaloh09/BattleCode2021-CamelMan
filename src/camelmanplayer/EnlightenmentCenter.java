@@ -99,12 +99,4 @@ public class EnlightenmentCenter extends RobotPlayer{
 
         numOfRobotDied += removeList.size();
     }
-
-    // TODO: Move to RobotPlayer later
-    enum WarPhase {
-        SEARCH,
-        CONQUER,
-        ATTACK,
-        DEFEND
-    }
 }
