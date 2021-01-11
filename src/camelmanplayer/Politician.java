@@ -1,9 +1,6 @@
 package camelmanplayer;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.Team;
+import battlecode.common.*;
 
 public class Politician extends RobotPlayer{
 
