@@ -9,7 +9,10 @@ public class Slanderer extends RobotPlayer{
         this.rc = rc;
     }
 
-    static void runSlanderer() throws GameActionException {
+    void runSlanderer() throws GameActionException {
+        // general principle
+
+        // movements by stages
         if (tryMove(randomDirection()))
             System.out.println("I moved!");
     }

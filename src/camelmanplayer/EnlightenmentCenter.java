@@ -18,7 +18,7 @@ public class EnlightenmentCenter extends RobotPlayer{
         numOfRobotDied = 0;
     }
 
-    static void runElightenmentCenter() throws GameActionException {
+    static void runEnlightenmentCenter() throws GameActionException {
         updateWarPhase();
         buildRobot();
         setFlag();

@@ -5,13 +5,10 @@ import battlecode.common.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
-
-    public MapLocation tempDestination;
-
-    public MapLocation closestLocToDest;
 
     static final RobotType[] spawnableRobot = {
             RobotType.POLITICIAN,
@@ -78,40 +75,33 @@ public strictfp class RobotPlayer {
         turnCount = 0;
 
         System.out.println("I'm a " + rc.getType() + " and I just got created!");
-        // TODO: every while loop is a round now, so we need to change the declaration
-        while (true) {
-            turnCount += 1;
-            // Try/catch blocks stop unhandled exceptions, which cause your robot to freeze
-            try {
-                // Here, we've separated the controls into a different method for each RobotType.
-                // You may rewrite this into your own control structure if you wish.
-                System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
-                switch (rc.getType()) {
-                    case ENLIGHTENMENT_CENTER:
-                        EnlightenmentCenter myEnlightenmentCenter = new EnlightenmentCenter(rc);
-                        myEnlightenmentCenter.runElightenmentCenter();
-                        break;
-                    case POLITICIAN:
-                        Politician myPolitician = new Politician(rc);
-                        myPolitician.runPolitician();
-                        break;
-                    case SLANDERER:
-                        Slanderer mySlanderer = new Slanderer(rc);
-                        mySlanderer.runSlanderer();
-                        break;
-                    case MUCKRAKER:
-                        Muckraker myMuckraker = new Muckraker(rc);
-                        myMuckraker.runMuckraker();
-                        break;
-                }
-
-                // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-                Clock.yield();
-
-            } catch (Exception e) {
-                System.out.println(rc.getType() + " Exception");
-                e.printStackTrace();
+        // Try/catch blocks stop unhandled exceptions, which cause your robot to freeze
+        try {
+            // Here, we've separated the controls into a different method for each RobotType.
+            // You may rewrite this into your own control structure if you wish.
+            System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
+            switch (rc.getType()) {
+                case ENLIGHTENMENT_CENTER:
+                    EnlightenmentCenter myEnlightenmentCenter = new EnlightenmentCenter(rc);
+                    myEnlightenmentCenter.runEnlightenmentCenter();
+                    break;
+                case POLITICIAN:
+                    Politician myPolitician = new Politician(rc);
+                    myPolitician.runPolitician();
+                    break;
+                case SLANDERER:
+                    Slanderer mySlanderer = new Slanderer(rc);
+                    mySlanderer.runSlanderer();
+                    break;
+                case MUCKRAKER:
+                    Muckraker myMuckraker = new Muckraker(rc);
+                    myMuckraker.runMuckraker();
+                    break;
             }
+
+        } catch (Exception e) {
+            System.out.println(rc.getType() + " Exception");
+            e.printStackTrace();
         }
     }
 
@@ -148,128 +138,122 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
-    void tryMoveWithCatch(Direction dir) {
+    boolean tryMoveWithCatch(Direction dir) throws Exception {
         try {
             tryMove(dir);
+            // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
+            Clock.yield();
+            return true;
         } catch (GameActionException cannotMove) {
             System.out.println("oops, cannot move");
 
+            MapLocation adjacentLoc = rc.adjacentLocation(dir);
 
-            RobotInfo rInfo;
-            try {
-                // TODO: take the wall as a boundary
-                MapLocation adjacentLoc = rc.adjacentLocation(dir);
-                rInfo = rc.senseRobotAtLocation(adjacentLoc);
-                // TODO: process rInfo, should come up with some responses that these scouts do specifically in scanning
-                // TODO: cool down period
-            } catch (GameActionException noRobot){
+            if (!rc.onTheMap(adjacentLoc)) {
                 System.out.println("oops, just bumped into the wall");
+                // TODO: take the wall as a boundary
+                Clock.yield();
 
+            } else if (rc.isLocationOccupied(adjacentLoc)) {
+                System.out.println("the adjacent location is occupied ;-;");
+                // TODO: process rInfo, should come up with some responses that these scouts do specifically in scanning
+                Clock.yield();
+
+                RobotInfo rInfo;
+                rInfo = rc.senseRobotAtLocation(adjacentLoc);
+
+            } else {
+                System.out.println("cool-down turns:" + rc.getCooldownTurns());
+                System.out.println("still in cool down or something weird happened");
+                Clock.yield();
             }
 
+            return false;
+
         }
     }
-
-    void moveToDestination(Direction direction, MapLocation destination) {
-        MapLocation currLoc = rc.getLocation();
-        int currxDist = currLoc.x - destination.x;
-        int curryDist = currLoc.y - destination.y;
-        // while we haven't exceeded the destination, keep moving forward
-        while (rc.canMove(direction) &&
-                (rc.getLocation().x - destination.x) / currxDist >= 0
-                && (rc.getLocation().y - destination.y) / curryDist >= 0) {
-            tryMoveWithCatch(direction);
-        }
-    }
-
 
     // scanning algorithm
 
-    boolean shouldKeepScan(MapLocation destination) {
-        boolean reachedDest = rc.getLocation().equals(destination);
-        return !reachedDest;
-    }
-
-    /** let the bot make the first turn when it's scanning its section */
-    void scanFstMoveLeft(int i, int travelDist) throws Exception {
-        MapLocation currLoc = rc.getLocation();
-
-        // first left boundary location
-        int xDiff = (int) (travelDist * scanMoveLeftXYRatio[i][0]);
-        int yDiff = (int) (travelDist * scanMoveLeftXYRatio[i][1]);
-        MapLocation fstBound = currLoc.translate(xDiff, yDiff);
-
-        // keep moving until we reach the boundary
-        // TODO: change the condition
-        while (!rc.getLocation().equals(fstBound)) {
+    /** keep the bot moving when it hasn't reached the destination */
+    void moveToDestination (MapLocation destination) throws Exception {
+        while (!rc.getLocation().equals(destination)) {
             // a list of locations to go to the location closest to the destination
-            LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, fstBound);
+            LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, destination);
             while (!locs.isEmpty()) {
                 // if we haven't reached the closest location, keep going
-                MapLocation head = locs.pop();
+                MapLocation head = locs.peek();
                 Direction nextDir = rc.getLocation().directionTo(head);
-                while (!tryMove(nextDir)) {
-                    // TODO: CHANGE THINGS WITH FIELDS
-                    // if cannot move this round
-                    tryMove(nextDir);
+                boolean moved = tryMoveWithCatch(nextDir);
+                if (moved) {
+                    // if we've moved to the first node successfully, remove the first node
+                    locs.remove();
                 }
             }
         }
+    }
 
+    void scanMove(int xDiff, int yDiff) throws Exception {
+        MapLocation currLoc = rc.getLocation();
+        MapLocation dest = currLoc.translate(xDiff, yDiff);
+        moveToDestination(dest);
+    }
+
+    /** let the bot make the first turn when it's scanning its section */
+    void scanFstMoveLeft(int i, double travelDist) throws Exception {
+        // first left boundary location
+        int xDiff = (int) (travelDist * scanMoveLeftXYRatio[i][0]);
+        int yDiff = (int) (travelDist * scanMoveLeftXYRatio[i][1]);
+        scanMove(xDiff, yDiff);
     }
 
     /** turn 135 degree CW and move the bot to the right boundary */
-    void scanMoveRight(int i, MapLocation lastMainAxisLoc, Direction dir) {
+    void scanMoveRight(int i, MapLocation lastMainAxisLoc) throws Exception {
         MapLocation currLoc = rc.getLocation();
-        int currLocx = currLoc.x;
-        int currLocy = currLoc.y;
-
         // calculate the second boundary
-        int xDiff = (int) (Math.abs(lastMainAxisLoc.x - currLocx) * scanMoveRightXYRatio[i][0]);
-        int yDiff = (int) (Math.abs(lastMainAxisLoc.y - currLocy) * scanMoveRightXYRatio[i][1]);
-        MapLocation rightBound = currLoc.translate(xDiff, yDiff);
-
-        moveToDestination(dir, rightBound);
+        int xDiff = (int) (Math.abs(lastMainAxisLoc.x - currLoc.x) * scanMoveRightXYRatio[i][0]);
+        int yDiff = (int) (Math.abs(lastMainAxisLoc.y - currLoc.y) * scanMoveRightXYRatio[i][1]);
+        scanMove(xDiff, yDiff);
     }
 
     /** turn 45 degree CCW and move the bot to the left boundary */
-    void scanMoveLeft(int i, MapLocation ECenterLoc, Direction dir) {
+    void scanMoveLeft(int i, MapLocation ECenterLoc) throws Exception {
         MapLocation currLoc = rc.getLocation();
 
-        // calculate the distance between the current location and the destination on th left boundary
-        int xDiff = (int) (Math.abs(currLoc.x - ECenterLoc.x) * scanMoveLeftXYRatio[i][0]);
-        int yDiff = (int) (Math.abs(currLoc.y - ECenterLoc.y) * scanMoveLeftXYRatio[i][0]);
-        MapLocation destination = currLoc.translate(xDiff, yDiff);
+        int xDiffToECenter = Math.abs(currLoc.x - ECenterLoc.x);
+        int yDiffToECenter = Math.abs(currLoc.y - ECenterLoc.y);
 
-        moveToDestination(dir, destination);
+        // the distance between the current location and the destination on th left boundary
+        double travelDist = yDiffToECenter + (1 + Math.sqrt(2)) * xDiffToECenter;
+
+        // the coordinate difference to the destination
+        int xDiff = (int) (travelDist * scanMoveLeftXYRatio[i][0]);
+        int yDiff = (int) (travelDist * scanMoveLeftXYRatio[i][1]);
+
+        scanMove(xDiff, yDiff);
     }
 
     /** make the bot make zigzag movements while it's scanning its section */
-    void scanMoveZigzag(int fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
+    void scanMoveZigzag(double fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
         // left direction
         int leftDirIdx = (i - 1) % directions.length;
         Direction leftDir = directions[leftDirIdx];
 
-        // right direction
-        int rightDirIdx = (i + 2) % directions.length;
-        Direction rightDir = directions[rightDirIdx];
-
         // move to the left boundary from the central line
         scanFstMoveLeft(i, fstTravelDist);
 
-        // TODO: figure out when to stop the 1/8 traversal tryMoveWithCatch()
+        // TODO: check the info from ECenter every round and stop when a new ECenter is found
         while (true) {
             // first move right
-            scanMoveRight(i, lastMainAxisLoc, rightDir);
+            scanMoveRight(i, lastMainAxisLoc);
 
             // then move left
-            scanMoveLeft(i, ECenterLoc, leftDir);
+            scanMoveLeft(i, ECenterLoc);
         }
 
     }
 
-    /** scan the entire map at the start of the game */
-    // TODO: stop all the bots when an E-Center is found
+    /** scan 1/8 of the map at the start of the game */
     void scanMap() {
         // initialize the movement by getting the E-center coordinates
         MapLocation ECenterLoc = rc.getLocation();
@@ -277,28 +261,28 @@ public strictfp class RobotPlayer {
         int ELocx = ECenterLoc.x;
         int ELocy = ECenterLoc.y;
 
-        // TODO: move code, this class only controls a single robot
-        for (int i = 0; i < directions.length; i ++) {
-            // current direction
-            Direction direction = directions[i];
+        try {
+            // TODO: move the for loop to ECenter, this class only controls a single robot
+            for (int i = 0; i < directions.length; i ++) {
+                // current direction
+                Direction direction = directions[i];
 
-            // first move one step forward in this direction
-            tryMoveWithCatch(direction);
+                // first move one step forward in this direction
+                tryMoveWithCatch(direction);
 
-            // current location
-            MapLocation currLoc = rc.getLocation();
-            int currLocx = currLoc.x;
-            int currLocy = currLoc.y;
+                // current location
+                MapLocation currLoc = rc.getLocation();
+                int currLocx = currLoc.x;
+                int currLocy = currLoc.y;
 
-            // the distance travelled from the starting point of the scan (E-Center)
-            int fstTravelDist = (int) Math.sqrt((currLocx - ELocx)^2 + (currLocy - ELocy)^2);
+                // the distance travelled from the starting point of the scan (E-Center)
+                double fstTravelDist = Math.sqrt((currLocx - ELocx) ^ 2 + (currLocy - ELocy) ^ 2);
 
-            try {
                 scanMoveZigzag(fstTravelDist, i, rc.getLocation(), ECenterLoc);
-            } catch (Exception e) {
-                // TODO: make the robot stop whenever an error occurs
-                System.out.println(e);
+
             }
+        } catch (Exception e) {
+            System.out.println(e);
         }
     }
 }

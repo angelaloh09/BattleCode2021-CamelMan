@@ -1,9 +1,6 @@
 package camelmanplayer;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.Team;
+import battlecode.common.*;
 
 public class Politician extends RobotPlayer{
 
@@ -11,7 +8,8 @@ public class Politician extends RobotPlayer{
         this.rc = rc;
     }
 
-    static void runPolitician() throws GameActionException {
+    void runPolitician() throws GameActionException {
+        // try move
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
         RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
@@ -21,7 +19,17 @@ public class Politician extends RobotPlayer{
             System.out.println("empowered");
             return;
         }
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+
+        // movements by stages
+        while (true) {
+            turnCount += 1;
+            if (turnCount <= 300) {
+                scanMap();
+            } else {
+                if (tryMove(randomDirection()))
+                    System.out.println("I moved!");
+                Clock.yield();
+            }
+        }
     }
 }
