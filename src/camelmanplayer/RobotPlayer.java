@@ -150,12 +150,14 @@ public strictfp class RobotPlayer {
         } catch (GameActionException cannotMove) {
             System.out.println("oops, cannot move");
 
-            // TODO: take the wall as a boundary
-            MapLocation adjacentLoc = rc.adjacentLocation(dir);
+
             RobotInfo rInfo;
             try {
+                // TODO: take the wall as a boundary
+                MapLocation adjacentLoc = rc.adjacentLocation(dir);
                 rInfo = rc.senseRobotAtLocation(adjacentLoc);
-                // TODO: process rInfo, either send to ECenter or immediately react
+                // TODO: process rInfo, should come up with some responses that these scouts do specifically in scanning
+                // TODO: cool down period
             } catch (GameActionException noRobot){
                 System.out.println("oops, just bumped into the wall");
 
@@ -251,7 +253,7 @@ public strictfp class RobotPlayer {
         // move to the left boundary from the central line
         scanFstMoveLeft(i, fstTravelDist);
 
-        // TODO: figure out the condition, could try editing tryMoveWithCatch()
+        // TODO: figure out when to stop the 1/8 traversal tryMoveWithCatch()
         while (true) {
             // first move right
             scanMoveRight(i, lastMainAxisLoc, rightDir);
