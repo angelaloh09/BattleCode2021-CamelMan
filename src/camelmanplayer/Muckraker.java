@@ -8,7 +8,7 @@ public class Muckraker extends RobotPlayer {
         this.rc = rc;
     }
 
-    void runMuckraker() throws GameActionException {
+    void runMuckraker() throws Exception {
 
         // movements by stages
         while (true) {
@@ -17,7 +17,11 @@ public class Muckraker extends RobotPlayer {
                     scanMap();
                     break;
                 case CONQUER:
+                    mUniversalPrinciple();
+                    break;
                 case ATTACK:
+                    attackEnemyCenter();
+                    break;
                 case DEFEND:
                     mUniversalPrinciple();
                     break;
@@ -26,6 +30,12 @@ public class Muckraker extends RobotPlayer {
                     break;
             }
         }
+    }
+
+    void attackEnemyCenter() throws Exception{
+        int actionRS = rc.getType().actionRadiusSquared;
+        moveToDestination(targetECenter, actionRS);
+        randomMovement();
     }
 }
 

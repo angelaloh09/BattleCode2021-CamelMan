@@ -1,7 +1,6 @@
 package camelmanplayer;
 
 import battlecode.common.*;
-import sun.jvm.hotspot.memory.SymbolTable;
 
 import java.util.*;
 
@@ -330,7 +329,6 @@ public strictfp class RobotPlayer {
                     direction = ELoc.directionTo(startLoc);
                 }
             }
-
             // first move one step forward in this direction
             tryMoveWithCatch(direction);
 
@@ -349,9 +347,6 @@ public strictfp class RobotPlayer {
             System.out.println(e);
         }
     }
-
-
-    // conquer and attack phases
 
     void pUniversalPrinciple() throws GameActionException {
         // try move
