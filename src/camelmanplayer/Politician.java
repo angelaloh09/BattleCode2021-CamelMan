@@ -17,14 +17,8 @@ public class Politician extends RobotPlayer{
                     scanMap();
                     break;
                 case CONQUER:
-                    goToECenter();
-                    break;
                 case ATTACK:
-                    // TODO: differentiate
-                    goToECenter();
-                    break;
                 case DEFEND:
-                    // go back and empower
                     goToECenter();
                     break;
                 default:

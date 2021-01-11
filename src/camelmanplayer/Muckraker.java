@@ -2,7 +2,7 @@ package camelmanplayer;
 
 import battlecode.common.*;
 
-public class Muckraker extends RobotPlayer{
+public class Muckraker extends RobotPlayer {
 
     Muckraker(RobotController rc) {
         this.rc = rc;
@@ -10,19 +10,22 @@ public class Muckraker extends RobotPlayer{
 
     void runMuckraker() throws GameActionException {
 
-
         // movements by stages
-        // TODO: change the stages
         while (true) {
-            turnCount += 1;
-            if (turnCount <= 300) {
-                scanMap();
-            } else {
-                // do random movements
-                if (tryMove(randomDirection()))
-                    System.out.println("I moved!");
-                Clock.yield();
+            switch (warPhase) {
+                case SEARCH:
+                    scanMap();
+                    break;
+                case CONQUER:
+                case ATTACK:
+                case DEFEND:
+                    mUniversalPrinciple();
+                    break;
+                default:
+                    randomMovement();
+                    break;
             }
         }
     }
 }
+
