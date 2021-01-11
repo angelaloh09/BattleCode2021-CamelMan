@@ -1,11 +1,9 @@
 package camelmanplayer;
 
 import battlecode.common.*;
+import sun.jvm.hotspot.memory.SymbolTable;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -59,6 +57,16 @@ public strictfp class RobotPlayer {
     static int turnCount;
 
     static List<MapLocation> path;
+
+    static MapLocation motherLoc;
+
+    static int motherId;
+
+    static WarPhase warPhase = WarPhase.SEARCH;
+
+    static HashMap<MapLocation, Team> enlightenmentCenters = new HashMap<>();
+
+    static MapLocation targetECenter;
 
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -138,10 +146,30 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
+    // apply the universal principle
+    void applyUP() throws GameActionException {
+        switch (rc.getType()) {
+            case POLITICIAN:
+                if (warPhase != WarPhase.SEARCH) {
+                    pUniversalPrinciple();
+                }
+                break;
+            case MUCKRAKER:
+                mUniversalPrinciple();
+                break;
+            default:
+                break;
+        }
+    }
+
     boolean tryMoveWithCatch(Direction dir) throws Exception {
+        applyUP();
+
         try {
             tryMove(dir);
             // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
+            getFlagFromMom();
+            turnCount += 1;
             Clock.yield();
             return true;
         } catch (GameActionException cannotMove) {
@@ -165,17 +193,19 @@ public strictfp class RobotPlayer {
                 System.out.println("still in cool down or something weird happened");
             }
 
+            getFlagFromMom();
+            turnCount += 1;
             Clock.yield();
             return false;
 
         }
     }
 
-    // scanning algorithm
+    // search phase
 
     /** keep the bot moving when it hasn't reached the destination */
-    void moveToDestination (MapLocation destination) throws Exception {
-        while (!rc.getLocation().equals(destination)) {
+    void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
+        while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
             // a list of locations to go to the location closest to the destination
             LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, destination);
             while (!locs.isEmpty()) {
@@ -194,7 +224,7 @@ public strictfp class RobotPlayer {
     void scanMove(int xDiff, int yDiff) throws Exception {
         MapLocation currLoc = rc.getLocation();
         MapLocation dest = currLoc.translate(xDiff, yDiff);
-        moveToDestination(dest);
+        moveToDestination(dest, 0);
     }
 
     /** let the bot make the first turn when it's scanning its section */
@@ -231,6 +261,20 @@ public strictfp class RobotPlayer {
         scanMove(xDiff, yDiff);
     }
 
+    void getFlagFromMom() throws GameActionException {
+        if (rc.canGetFlag(motherId)) {
+            Message motherMsg = FlagProtocol.decode(rc.getFlag(motherId));
+            if (motherMsg != null) {
+                targetECenter = motherMsg.getMapLocation(motherLoc);
+                warPhase = motherMsg.warPhase;
+                enlightenmentCenters.put(targetECenter, motherMsg.team);
+            }
+        } else {
+            warPhase = WarPhase.DEFEND;
+            targetECenter = motherLoc;
+        }
+    }
+
     /** make the bot make zigzag movements while it's scanning its section */
     void scanMoveZigzag(double fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
         // left direction
@@ -240,8 +284,26 @@ public strictfp class RobotPlayer {
         // move to the left boundary from the central line
         scanFstMoveLeft(i, fstTravelDist);
 
-        // TODO: check the info from ECenter every round and stop when a new ECenter is found
-        while (true) {
+        RobotInfo[] rInfoLst = rc.senseNearbyRobots();
+        // make sure that this ECenter is not the original one
+        for (RobotInfo rInfo : rInfoLst) {
+            RobotType type = rInfo.getType();
+            MapLocation loc = rInfo.getLocation();
+            if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
+                // send the info of this ECenter to mom
+                Message msg = new Message(WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
+                int flag = FlagProtocol.encode(msg);
+                if (rc.canSetFlag(flag)) {
+                    rc.setFlag(flag);
+                }
+            }
+        }
+
+        // get info from mom to see if we need to keep scanning
+        getFlagFromMom();
+
+        while (warPhase == WarPhase.SEARCH) {
+
             // first move right
             scanMoveRight(i, lastMainAxisLoc);
 
@@ -254,33 +316,93 @@ public strictfp class RobotPlayer {
     /** scan 1/8 of the map at the start of the game */
     void scanMap() {
         // initialize the movement by getting the E-center coordinates
-        MapLocation ECenterLoc = rc.getLocation();
-
-        int ELocx = ECenterLoc.x;
-        int ELocy = ECenterLoc.y;
+        MapLocation startLoc = rc.getLocation();
 
         try {
-            // TODO: move the for loop to ECenter, this class only controls a single robot
-            for (int i = 0; i < directions.length; i ++) {
-                // current direction
-                Direction direction = directions[i];
-
-                // first move one step forward in this direction
-                tryMoveWithCatch(direction);
-
-                // current location
-                MapLocation currLoc = rc.getLocation();
-                int currLocx = currLoc.x;
-                int currLocy = currLoc.y;
-
-                // the distance travelled from the starting point of the scan (E-Center)
-                double fstTravelDist = Math.sqrt((currLocx - ELocx) ^ 2 + (currLocy - ELocy) ^ 2);
-
-                scanMoveZigzag(fstTravelDist, i, rc.getLocation(), ECenterLoc);
-
+            Direction direction = directions[(int) (directions.length * Math.random())];
+            RobotInfo[] rinfolst =  rc.senseNearbyRobots(1);
+            for (RobotInfo rinfo : rinfolst) {
+                if (rinfo.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                    MapLocation ELoc = rinfo.getLocation();
+                    motherLoc = ELoc;
+                    motherId = rinfo.getID();
+                    // main direction of scanning
+                    direction = ELoc.directionTo(startLoc);
+                }
             }
+
+            // first move one step forward in this direction
+            tryMoveWithCatch(direction);
+
+            // current location
+            MapLocation currLoc = rc.getLocation();
+            int currLocx = currLoc.x;
+            int currLocy = currLoc.y;
+
+            // the distance travelled from the starting point of the scan (E-Center)
+            double fstTravelDist = Math.sqrt((currLocx - startLoc.x) ^ 2 + (currLocy - startLoc.y) ^ 2);
+
+            int i = Arrays.asList(directions).indexOf(direction);
+            scanMoveZigzag(fstTravelDist, i, rc.getLocation(), startLoc);
+
         } catch (Exception e) {
             System.out.println(e);
+        }
+    }
+
+
+    // conquer and attack phases
+
+    void pUniversalPrinciple() throws GameActionException {
+        // try move
+        Team enemy = rc.getTeam().opponent();
+        int actionRadius = rc.getType().actionRadiusSquared;
+        RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
+        if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
+            System.out.println("empowering...");
+            rc.empower(actionRadius);
+            System.out.println("empowered");
+            return;
+        }
+    }
+
+    void mUniversalPrinciple() throws GameActionException {
+        Team enemy = rc.getTeam().opponent();
+        int actionRadius = rc.getType().actionRadiusSquared;
+        for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
+            if (robot.type.canBeExposed()) {
+                // It's a slanderer... go get them!
+                if (rc.canExpose(robot.location)) {
+                    System.out.println("e x p o s e d");
+                    rc.expose(robot.location);
+                    return;
+                }
+            }
+        }
+    }
+
+    void randomMovement() throws GameActionException {
+        if (tryMove(randomDirection()))
+            System.out.println("I moved!");
+        turnCount += 1;
+        getFlagFromMom();
+        Clock.yield();
+    }
+
+    void goToECenter() throws Exception {
+        // listen to mom and move to the target ECenter
+        // TODO: what if we cannot get there
+        int actionRS = rc.getType().actionRadiusSquared;
+        moveToDestination(targetECenter, actionRS);
+
+        if (rc.canEmpower(actionRS)) {
+            // empower and die gloriously
+            turnCount += 1;
+            rc.empower(actionRS);
+            Clock.yield();
+        } else {
+            // move randomly like a soldier who doesn't know the meaning of his life
+            randomMovement();
         }
     }
 }

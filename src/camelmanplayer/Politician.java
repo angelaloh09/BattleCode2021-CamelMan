@@ -8,7 +8,34 @@ public class Politician extends RobotPlayer{
         this.rc = rc;
     }
 
-    void runPolitician() throws GameActionException {
+    void runPolitician() throws Exception {
+
+        // movements by stages
+        while (true) {
+            switch (warPhase) {
+                case SEARCH:
+                    scanMap();
+                    break;
+                case CONQUER:
+                    goToECenter();
+                    break;
+                case ATTACK:
+                    // TODO: differentiate
+                    goToECenter();
+                    break;
+                case DEFEND:
+                    // go back and empower
+                    goToECenter();
+                    break;
+                default:
+                    randomMovement();
+                    break;
+            }
+        }
+    }
+
+
+    void universalPrinciple() throws GameActionException {
         // try move
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
@@ -19,17 +46,6 @@ public class Politician extends RobotPlayer{
             System.out.println("empowered");
             return;
         }
-
-        // movements by stages
-        while (true) {
-            turnCount += 1;
-            if (turnCount <= 300) {
-                scanMap();
-            } else {
-                if (tryMove(randomDirection()))
-                    System.out.println("I moved!");
-                Clock.yield();
-            }
-        }
     }
+
 }

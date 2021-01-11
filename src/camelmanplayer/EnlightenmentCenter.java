@@ -127,9 +127,16 @@ public class EnlightenmentCenter extends RobotPlayer{
         RobotType toBuild = determineRobotType();
 
         for (int i = 0; i < directions.length; i++) {
-            Direction dir = directions[i + directionIndex];
+            Direction dir = directions[(directionIndex+i) % directions.length];
+            MapLocation targetLoc = rc.adjacentLocation(dir);
+            if (!rc.onTheMap(targetLoc)) {
+                directionIndex = (directionIndex + 1) % directions.length;
+                break;
+            }
             if (rc.canBuildRobot(toBuild, dir, influence)) {
-                if (i == 0) directionIndex = (directionIndex + 1) % directions.length;
+                if (i == 0 && toBuild != RobotType.SLANDERER) {
+                    directionIndex = (directionIndex + 1) % directions.length;
+                }
                 rc.buildRobot(toBuild, dir, influence);
                 updateChildRobotIds(dir);
                 numOfRobotBuilt++;

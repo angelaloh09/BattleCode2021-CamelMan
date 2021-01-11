@@ -60,7 +60,7 @@ public class AStarPath {
         return generatePath(current);
     }
 
-    static boolean foundPath(MapLocation current, MapLocation initLocation) {
+    private static boolean foundPath(MapLocation current, MapLocation initLocation) {
         if (current == destination) return true;
         int maxSquaredDistance;
         switch (rc.getType()) {
@@ -72,7 +72,7 @@ public class AStarPath {
         return !current.isWithinDistanceSquared(initLocation, maxSquaredDistance);
     }
 
-    static LinkedList<MapLocation> generatePath(MapLocation end) {
+    private static LinkedList<MapLocation> generatePath(MapLocation end) {
         LinkedList<MapLocation> path = new LinkedList<>();
 
         MapLocation location = end;
@@ -86,7 +86,7 @@ public class AStarPath {
     }
 
 
-    static void branchOut(MapLocation location, Set<MapLocation> open, Set<MapLocation> closed) throws GameActionException {
+    private static void branchOut(MapLocation location, Set<MapLocation> open, Set<MapLocation> closed) throws GameActionException {
         for (Direction direction: directions) {
             MapLocation adjacentLoc = rc.adjacentLocation(direction);
 
@@ -104,7 +104,7 @@ public class AStarPath {
         }
     }
 
-    static MapLocation findLocationOfLowestCost(Set<MapLocation> open, HashMap<MapLocation, LocationInfo> travelCostMap)
+    private static MapLocation findLocationOfLowestCost(Set<MapLocation> open, HashMap<MapLocation, LocationInfo> travelCostMap)
             throws Exception {
         int lowestCost = Integer.MAX_VALUE;
         MapLocation result = null;
