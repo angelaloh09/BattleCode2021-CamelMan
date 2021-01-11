@@ -11,6 +11,7 @@ public class EnlightenmentCenter extends RobotPlayer{
     private static int numOfRobotDied;
     private static HashMap<MapLocation, Team> enlightenmentCenters;
     private static Team opponent;
+    private static int directionIndex;
 
     EnlightenmentCenter(RobotController rc) {
         this.rc = rc;
@@ -21,6 +22,7 @@ public class EnlightenmentCenter extends RobotPlayer{
         enlightenmentCenters = new HashMap<>();
         enlightenmentCenters.put(rc.getLocation(), rc.getTeam());
         opponent = rc.getTeam().opponent();
+        directionIndex = 0;
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
@@ -124,8 +126,10 @@ public class EnlightenmentCenter extends RobotPlayer{
         int influence = 50;
         RobotType toBuild = determineRobotType();
 
-        for (Direction dir : directions) {
+        for (int i = 0; i < directions.length; i++) {
+            Direction dir = directions[i + directionIndex];
             if (rc.canBuildRobot(toBuild, dir, influence)) {
+                if (i == 0) directionIndex = (directionIndex + 1) % directions.length;
                 rc.buildRobot(toBuild, dir, influence);
                 updateChildRobotIds(dir);
                 numOfRobotBuilt++;
