@@ -1,5 +1,6 @@
 package camelmanplayer;
 
+import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
@@ -10,10 +11,10 @@ public class Slanderer extends RobotPlayer{
     }
 
     void runSlanderer() throws GameActionException {
-        // general principle
-
-        // movements by stages
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+        while (true) {
+            if (tryMove(randomDirection())) System.out.println("I moved!");
+            Clock.yield();
+            turnCount++;
+        }
     }
 }

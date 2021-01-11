@@ -28,10 +28,10 @@ public class EnlightenmentCenter extends RobotPlayer{
     static void runEnlightenmentCenter() throws GameActionException {
 
         while (true) {
+            setFlag();
             warPhase = updateWarPhase();
             buildRobot();
             listenToChildRobots();
-            setFlag();
             Clock.yield();
         }
     }
@@ -63,16 +63,23 @@ public class EnlightenmentCenter extends RobotPlayer{
     static void setFlag() throws GameActionException {
         Message msgToSend = null;
         switch (warPhase) {
-            case SEARCH: msgToSend = new Message(WarPhase.SEARCH); break;
+            case SEARCH:
+                System.out.println("Time to Search!");
+                msgToSend = new Message(WarPhase.SEARCH, rc.getTeam()); break;
             case CONQUER:
+                System.out.println("Time to Conquer!");
                 MapLocation neutralLocation = getClosestEnlightmentCenter(Team.NEUTRAL);
                 msgToSend = new Message(WarPhase.CONQUER, Team.NEUTRAL, neutralLocation, rc.getLocation());
                 break;
             case ATTACK:
+                System.out.println("Time to Attack!");
                 MapLocation enemyLocation = getClosestEnlightmentCenter(opponent);
                 msgToSend = new Message(WarPhase.ATTACK, opponent, enemyLocation, rc.getLocation());
                 break;
-            case DEFEND: msgToSend = new Message(WarPhase.DEFEND); break;
+            case DEFEND:
+                System.out.println("Time to Defend!");
+                msgToSend = new Message(WarPhase.DEFEND, rc.getTeam());
+                break;
         }
         int newFlag = FlagProtocol.encode(msgToSend);
         if (newFlag != rc.getFlag(rc.getID())) {
@@ -97,11 +104,11 @@ public class EnlightenmentCenter extends RobotPlayer{
     static RobotType determineRobotType() {
         switch (warPhase) {
             case SEARCH:
-                return randomRobotType(0.4,0.2,0.4);
+                return randomRobotType(0.3,0.3,0.4);
             case CONQUER:
-                return randomRobotType(0.8,0.1,0.1);
+                return randomRobotType(0.7,0.2,0.1);
             case ATTACK:
-                return randomRobotType(0.5,0.1,0.4);
+                return randomRobotType(0.4,0.2,0.4);
             case DEFEND:
                 return randomRobotType(0.5,0.5,0);
             default:
@@ -168,7 +175,7 @@ public class EnlightenmentCenter extends RobotPlayer{
         }
 
         for (int removeID: removeList) {
-            childRobotIds.remove(removeID);
+            childRobotIds.remove(new Integer(removeID));
         }
 
         numOfRobotDied += removeList.size();

@@ -1,6 +1,7 @@
 package camelmanplayer;
 
 import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 import battlecode.common.Team;
 
 import java.util.Map;
@@ -19,8 +20,8 @@ class Message {
         relativeY = y;
     }
 
-    Message(RobotPlayer.WarPhase warP) {
-        team = null;
+    Message(RobotPlayer.WarPhase warP, Team team) {
+        this.team = team;
         warPhase = warP;
         relativeX = 0;
         relativeY = 0;

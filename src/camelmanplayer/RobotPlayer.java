@@ -165,11 +165,12 @@ public strictfp class RobotPlayer {
         applyUP();
 
         try {
-            tryMove(dir);
+            rc.move(dir);
             // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
             getFlagFromMom();
             turnCount += 1;
             Clock.yield();
+            System.out.println("I've been alive for "+turnCount+" turns!");
             return true;
         } catch (GameActionException cannotMove) {
             System.out.println("oops, cannot move");
@@ -207,14 +208,16 @@ public strictfp class RobotPlayer {
         while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
             // a list of locations to go to the location closest to the destination
             LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, destination);
+            System.out.println("My path to "+destination+" is "+locs);
             while (!locs.isEmpty()) {
+                System.out.println("I'm trying to move to "+destination);
                 // if we haven't reached the closest location, keep going
-                MapLocation head = locs.peek();
-                Direction nextDir = rc.getLocation().directionTo(head);
+                MapLocation tail = locs.getLast();
+                Direction nextDir = rc.getLocation().directionTo(tail);
                 boolean moved = tryMoveWithCatch(nextDir);
                 if (moved) {
                     // if we've moved to the first node successfully, remove the first node
-                    locs.remove();
+                    locs.removeLast();
                 }
             }
         }
@@ -277,7 +280,7 @@ public strictfp class RobotPlayer {
     /** make the bot make zigzag movements while it's scanning its section */
     void scanMoveZigzag(double fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
         // left direction
-        int leftDirIdx = (i - 1) % directions.length;
+        int leftDirIdx = (i+7) % directions.length;
         Direction leftDir = directions[leftDirIdx];
 
         // move to the left boundary from the central line
@@ -290,6 +293,7 @@ public strictfp class RobotPlayer {
             MapLocation loc = rInfo.getLocation();
             if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
                 // send the info of this ECenter to mom
+                System.out.println("I found an enlightenment center!");
                 Message msg = new Message(WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
                 int flag = FlagProtocol.encode(msg);
                 if (rc.canSetFlag(flag)) {
@@ -312,25 +316,32 @@ public strictfp class RobotPlayer {
 
     }
 
+    void loadMotherInfo() {
+        RobotInfo[] rinfolst =  rc.senseNearbyRobots(2);
+        for (RobotInfo rinfo : rinfolst) {
+            if (rinfo.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                motherLoc = rinfo.getLocation();
+                motherId = rinfo.getID();
+                break;
+            }
+        }
+    }
+
     /** scan 1/8 of the map at the start of the game */
     void scanMap() {
         // initialize the movement by getting the E-center coordinates
+        // main direction of scanning
+        Direction direction = directions[(int) (directions.length * Math.random())];
         MapLocation startLoc = rc.getLocation();
+        System.out.println("My mother's location is "+motherLoc);
+        direction = motherLoc.directionTo(startLoc);
 
         try {
-            Direction direction = directions[(int) (directions.length * Math.random())];
-            RobotInfo[] rinfolst =  rc.senseNearbyRobots(1);
-            for (RobotInfo rinfo : rinfolst) {
-                if (rinfo.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-                    MapLocation ELoc = rinfo.getLocation();
-                    motherLoc = ELoc;
-                    motherId = rinfo.getID();
-                    // main direction of scanning
-                    direction = ELoc.directionTo(startLoc);
-                }
-            }
             // first move one step forward in this direction
-            tryMoveWithCatch(direction);
+            int movedSteps = 0;
+            while (movedSteps < 3) {
+                if (tryMoveWithCatch(direction)) movedSteps++;
+            }
 
             // current location
             MapLocation currLoc = rc.getLocation();
