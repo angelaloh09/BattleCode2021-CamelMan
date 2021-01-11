@@ -24,10 +24,14 @@ public class EnlightenmentCenter extends RobotPlayer{
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
-        warPhase = updateWarPhase();
-        buildRobot();
-        listenToChildRobots();
-        setFlag();
+
+        while (true) {
+            warPhase = updateWarPhase();
+            buildRobot();
+            listenToChildRobots();
+            setFlag();
+            Clock.yield();
+        }
     }
 
     static double survivalRate() {

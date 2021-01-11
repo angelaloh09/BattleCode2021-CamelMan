@@ -152,12 +152,10 @@ public strictfp class RobotPlayer {
             if (!rc.onTheMap(adjacentLoc)) {
                 System.out.println("oops, just bumped into the wall");
                 // TODO: take the wall as a boundary
-                Clock.yield();
 
             } else if (rc.isLocationOccupied(adjacentLoc)) {
                 System.out.println("the adjacent location is occupied ;-;");
                 // TODO: process rInfo, should come up with some responses that these scouts do specifically in scanning
-                Clock.yield();
 
                 RobotInfo rInfo;
                 rInfo = rc.senseRobotAtLocation(adjacentLoc);
@@ -165,9 +163,9 @@ public strictfp class RobotPlayer {
             } else {
                 System.out.println("cool-down turns:" + rc.getCooldownTurns());
                 System.out.println("still in cool down or something weird happened");
-                Clock.yield();
             }
 
+            Clock.yield();
             return false;
 
         }
