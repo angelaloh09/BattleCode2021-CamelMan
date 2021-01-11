@@ -9,6 +9,8 @@ public class EnlightenmentCenter extends RobotPlayer{
     private static List<Integer> childRobotIds;
     private static int numOfRobotBuilt;
     private static int numOfRobotDied;
+    private static HashMap<MapLocation, Team> enlightenmentCenters;
+    private static Team opponent;
 
     EnlightenmentCenter(RobotController rc) {
         this.rc = rc;
@@ -16,20 +18,73 @@ public class EnlightenmentCenter extends RobotPlayer{
         childRobotIds = new LinkedList<>();
         numOfRobotBuilt = 0;
         numOfRobotDied = 0;
+        enlightenmentCenters = new HashMap<>();
+        enlightenmentCenters.put(rc.getLocation(), rc.getTeam());
+        opponent = rc.getTeam().opponent();
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
-        updateWarPhase();
+        warPhase = updateWarPhase();
         buildRobot();
+        listenToChildRobots();
         setFlag();
     }
 
-    static void updateWarPhase() {
-
+    static double survivalRate() {
+        return 1 - (double) numOfRobotDied / (double) numOfRobotBuilt;
     }
 
-    static void setFlag() {
+    static WarPhase updateWarPhase() {
+        for (MapLocation location: enlightenmentCenters.keySet()) {
+            if (enlightenmentCenters.get(location) == Team.NEUTRAL) {
+                return WarPhase.CONQUER;
+            }
+        }
 
+        if (enlightenmentCenters.size() <= 2 && rc.getRoundNum() < 1000) {
+            return WarPhase.SEARCH;
+        }
+
+        if (rc.getConviction() < 50 || survivalRate() < 0.1) {
+            //TODO: make smarter thresholds
+            return WarPhase.DEFEND;
+        }
+
+        if (enlightenmentCenters.size() == 1) return WarPhase.SEARCH;
+        else return WarPhase.ATTACK;
+    }
+
+    static void setFlag() throws GameActionException {
+        Message msgToSend = null;
+        switch (warPhase) {
+            case SEARCH: msgToSend = new Message(WarPhase.SEARCH); break;
+            case CONQUER:
+                MapLocation neutralLocation = getClosestEnlightmentCenter(Team.NEUTRAL);
+                msgToSend = new Message(WarPhase.CONQUER, Team.NEUTRAL, neutralLocation, rc.getLocation());
+                break;
+            case ATTACK:
+                MapLocation enemyLocation = getClosestEnlightmentCenter(opponent);
+                msgToSend = new Message(WarPhase.ATTACK, opponent, enemyLocation, rc.getLocation());
+                break;
+            case DEFEND: msgToSend = new Message(WarPhase.DEFEND); break;
+        }
+        int newFlag = FlagProtocol.encode(msgToSend);
+        if (newFlag != rc.getFlag(rc.getID())) {
+            if (rc.canSetFlag(newFlag)) rc.setFlag(newFlag);
+        }
+    }
+
+    private static MapLocation getClosestEnlightmentCenter(Team team) {
+        MapLocation result = null;
+        int minDistanceSquared = Integer.MAX_VALUE;
+        for (MapLocation location: enlightenmentCenters.keySet()) {
+            int distanceSquared = location.distanceSquaredTo(rc.getLocation());
+            if (enlightenmentCenters.get(location) == team && distanceSquared < minDistanceSquared) {
+                result = location;
+                minDistanceSquared = distanceSquared;
+            }
+        }
+        return result;
     }
 
     // TODO: Determine the ratio of robot types for each war phase.
@@ -87,7 +142,11 @@ public class EnlightenmentCenter extends RobotPlayer{
         for (int robotID: childRobotIds) {
             if (rc.canGetFlag(robotID)) {
                 int robotFlag = rc.getFlag(robotID);
-                // TODO: decodeFlagMessage();
+                Message msg = FlagProtocol.decode(robotFlag);
+                if (msg != null) {
+                    MapLocation msgLocation = msg.getMapLocation(rc.getLocation());
+                    enlightenmentCenters.put(msgLocation,msg.team);
+                }
             } else {
                 removeList.add(robotID);
             }
