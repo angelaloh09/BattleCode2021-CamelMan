@@ -32,7 +32,15 @@ public class EnlightenmentCenter extends RobotPlayer{
             warPhase = updateWarPhase();
             buildRobot();
             listenToChildRobots();
+            randomBid();
             Clock.yield();
+        }
+    }
+
+    static void randomBid() throws GameActionException {
+        int influenceForBid = (int) (rc.getInfluence() * 0.04);
+        if (rc.canBid(influenceForBid)) {
+            rc.bid(influenceForBid);
         }
     }
 
@@ -166,6 +174,7 @@ public class EnlightenmentCenter extends RobotPlayer{
                 int robotFlag = rc.getFlag(robotID);
                 Message msg = FlagProtocol.decode(robotFlag);
                 if (msg != null) {
+                    System.out.println("I got a flag from my baby!");
                     MapLocation msgLocation = msg.getMapLocation(rc.getLocation());
                     enlightenmentCenters.put(msgLocation,msg.team);
                 }

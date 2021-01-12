@@ -15,7 +15,7 @@ public class Muckraker extends RobotPlayer {
         while (true) {
             switch (warPhase) {
                 case SEARCH:
-                    scanMap();
+                    randomScan();
                     System.out.println("I am searching!");
                     break;
                 case CONQUER:

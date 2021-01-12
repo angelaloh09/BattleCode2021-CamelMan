@@ -67,6 +67,8 @@ public strictfp class RobotPlayer {
 
     static MapLocation targetECenter;
 
+    static Set<MapLocation> visited = new HashSet<>();
+
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
      * If this method returns, the robot dies!
@@ -357,6 +359,42 @@ public strictfp class RobotPlayer {
         } catch (Exception e) {
             System.out.println(e);
         }
+    }
+
+    void randomScan() throws GameActionException {
+        boolean moved = false;
+        int numOfDirectionTried = 0;
+        Direction randomDir;
+        MapLocation randomLoc;
+        while (!moved && numOfDirectionTried < 10) {
+            randomDir = randomDirection();
+            randomLoc = rc.adjacentLocation(randomDir);
+            if (! visited.contains(randomLoc)) {
+                moved = tryMove(randomDir);
+            }
+            numOfDirectionTried++;
+        }
+
+        RobotInfo[] rInfoLst = rc.senseNearbyRobots();
+        // make sure that this ECenter is not the original one
+        for (RobotInfo rInfo : rInfoLst) {
+            RobotType type = rInfo.getType();
+            MapLocation loc = rInfo.getLocation();
+            if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
+                // send the info of this ECenter to mom
+                System.out.println("I found an enlightenment center!");
+                Message msg = new Message(WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
+                int flag = FlagProtocol.encode(msg);
+                System.out.println("The flag num is: "+flag);
+                if (rc.canSetFlag(flag)) {
+                    System.out.println("Flag changed!");
+                    rc.setFlag(flag);
+                }
+            }
+        }
+
+        getFlagFromMom();
+        Clock.yield();
     }
 
     void pUniversalPrinciple() throws GameActionException {

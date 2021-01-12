@@ -28,6 +28,7 @@ class Message {
     }
 
     Message(RobotPlayer.WarPhase warP, Team team, MapLocation targetLocation, MapLocation eCenterLocation) {
+        System.out.println("I am creating message for e-center at "+targetLocation);
         this.team = team;
         warPhase = warP;
         relativeX = targetLocation.x-eCenterLocation.x;
