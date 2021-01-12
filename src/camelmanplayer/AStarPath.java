@@ -47,7 +47,11 @@ public class AStarPath {
         while (true) {
             // Choose the location of the lowest f_cost in the open set as current
             current = findLocationOfLowestCost(open, travelCostMap);
+            System.out.println("current: " + current);
+            System.out.println("open contains current? " + open.contains(current));
+            System.out.println("open's size: " + open.size());
             open.remove(current);
+
             closed.add(current);
 
             // If current is the destination or a MapLocaiton at the edge of the robot's sensing range, break the loop.
@@ -90,15 +94,19 @@ public class AStarPath {
         for (Direction direction: directions) {
             MapLocation adjacentLoc = rc.adjacentLocation(direction);
 
+            System.out.println("adjacent loc in branchout: " + adjacentLoc);
             if (adjacentLoc != null && !closed.contains(adjacentLoc)) {
                 LocationInfo adjacentLocInfo = new LocationInfo(adjacentLoc, location);
 
                 LocationInfo oldAdjacentLocInfo = travelCostMap.get(adjacentLoc);
                 if (oldAdjacentLocInfo == null) {
+                    System.out.print(adjacentLoc + " added to open");
                     travelCostMap.put(adjacentLoc, adjacentLocInfo);
                     open.add(adjacentLoc);
                 } else if (oldAdjacentLocInfo.getCost() > adjacentLocInfo.getCost()) {
                     travelCostMap.put(adjacentLoc, adjacentLocInfo);
+                } else {
+                    System.out.println("old adjacent loc info: " + oldAdjacentLocInfo.parentLocation);
                 }
             }
         }
