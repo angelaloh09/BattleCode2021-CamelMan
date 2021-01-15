@@ -35,8 +35,6 @@ class Message {
         relativeY = targetLocation.y-eCenterLocation.y;
     }
 
-    // message sent when scout is in danger (includes message type)
-    // TODO: confused about this constructor
     Message(RobotPlayer.MessageType mType, RobotPlayer.WarPhase warP, Team team, int xCoor, int yCoor){
         this.team = team;
         msgType = mType;

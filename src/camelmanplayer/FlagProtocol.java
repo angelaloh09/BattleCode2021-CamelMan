@@ -8,6 +8,8 @@ import org.omg.IOP.TAG_ALTERNATE_IIOP_ADDRESS;
  * **/
 public class FlagProtocol {
 
+    //TODO: keep on updating location so mother knows where the kids are
+
     static final String tag = "10101010";
     static Message decode(int color) {
         String biString = zeroExtend(color, 24);

@@ -12,6 +12,7 @@ public class Slanderer extends RobotPlayer{
 
     void runSlanderer() throws GameActionException {
         while (true) {
+            warPhase = nextPhase;
             if (tryMove(randomDirection())) System.out.println("I moved!");
             Clock.yield();
             turnCount++;

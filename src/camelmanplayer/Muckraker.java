@@ -13,6 +13,7 @@ public class Muckraker extends RobotPlayer {
 
         // movements by stages
         while (true) {
+            warPhase = nextPhase;
             switch (warPhase) {
                 case SEARCH:
                     scanMap();
