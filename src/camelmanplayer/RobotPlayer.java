@@ -31,6 +31,15 @@ public strictfp class RobotPlayer {
         DEFEND
     }
 
+
+    // UPDATED
+    enum MessageType{
+        ECENTER,
+        SCOUTDANGER,
+        WALL,
+        CORNER
+    }
+
     static final double[][] scanMoveLeftXYRatio = new double[][] {
             {-Math.sqrt(1.0/2.0), Math.sqrt(1.0/2.0)},
             {0.0, 1.0},
@@ -145,6 +154,16 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
+    // UPDATED
+    static void setMessageFlag(MessageType mType, WarPhase warPhase, Team team, MapLocation currLoc)
+    throws GameActionException {
+        Message msg = new Message(mType, warPhase, team, currLoc, motherLoc);
+        int flag = FlagProtocol.encode(msg);
+        if (rc.canSetFlag(flag)) {
+            rc.setFlag(flag);
+        }
+    }
+
     // apply the universal principle
     void applyUP() throws GameActionException {
         switch (rc.getType()) {
@@ -161,45 +180,45 @@ public strictfp class RobotPlayer {
         }
     }
 
-    static Direction redirect(Direction dir) {
-        switch (dir){
-            case NORTH:
-                return Direction.WEST;
-            case WEST:
-                return Direction.SOUTH;
-            case SOUTH:
-                return Direction.EAST;
-            case EAST:
-                return Direction.NORTH;
-            case NORTHWEST:
-                return Direction.SOUTHWEST;
-            case SOUTHWEST:
-                return Direction.SOUTHEAST;
-            case SOUTHEAST:
-                return Direction.NORTHEAST;
-            case NORTHEAST:
-                return Direction.NORTHWEST;
-            default:
-                Direction random_dir = directions[(int) (directions.length * Math.random())];
-                return random_dir;
-            // TODO: cases for corners (maybe set some round counter --> default = random movement)
+    // UPDATED:
+    static Direction redirect(Direction dir, boolean corner) {
+        // TODO: what to do with corner???
+        if (corner){
+            Direction random_dir = directions[(int) (directions.length * Math.random())];
+            return random_dir;
+        }
+        else{
+            switch (dir) {
+                case NORTH:
+                    return Direction.WEST;
+                case WEST:
+                    return Direction.SOUTH;
+                case SOUTH:
+                    return Direction.EAST;
+                case EAST:
+                    return Direction.NORTH;
+                case NORTHWEST:
+                    return Direction.SOUTHWEST;
+                case SOUTHWEST:
+                    return Direction.SOUTHEAST;
+                case SOUTHEAST:
+                    return Direction.NORTHEAST;
+                case NORTHEAST:
+                    return Direction.NORTHWEST;
+                default:
+                    Direction random_dir = directions[(int) (directions.length * Math.random())];
+                    return random_dir;
+            }
         }
     }
 
-
-
+    // UPDATED:
     static Direction diverge(int enemyCount, int enemyThreshold) throws GameActionException {
-        Team ownTeam = rc.getTeam();
+        Team team = rc.getTeam();
         MapLocation currLoc = rc.getLocation();
         if (enemyCount > enemyThreshold) {
             System.out.println("I am in danger:O !");
-            // TODO: write higher level function for sending messages (?)
-            // TODO: should we change the msg format if it's different from sending ECenter location (?)
-            Message dangerMsg = new Message(WarPhase.SEARCH, ownTeam, currLoc, motherLoc);
-            int dangerFlag = FlagProtocol.encode(dangerMsg);
-            if (rc.canSetFlag(dangerFlag)) {
-                rc.setFlag(dangerFlag);
-            }
+            setMessageFlag(MessageType.SCOUTDANGER, WarPhase.SEARCH, team, currLoc);
         }
         // avoid dead-lock regardless of team
         Direction randomDir =  randomDirection();
@@ -208,6 +227,9 @@ public strictfp class RobotPlayer {
 
     boolean tryMoveWithCatch(Direction dir) throws Exception {
         applyUP();
+
+        Team team = rc.getTeam();
+        MapLocation currLoc = rc.getLocation();
 
         try {
             rc.move(dir);
@@ -222,15 +244,37 @@ public strictfp class RobotPlayer {
 
             MapLocation adjacentLoc = rc.adjacentLocation(dir);
 
-            if (!rc.onTheMap(adjacentLoc)) {
+            // TODO (UPDATED): cases for corners (maybe set some round counter) and send corner message?
+            // check if at least 3 of the adjacent nodes are not on the map
+            boolean corner = false;
+            int boundCounter = 0;
+            for (Direction direction: directions){
+                if (!rc.onTheMap(rc.adjacentLocation(direction))){
+                    boundCounter ++;
+                }
+                if (boundCounter == 3){
+                    corner = true;
+                }
+            }
+            // case 1: Scout in corner
+            if (corner){
+                setMessageFlag(MessageType.CORNER, WarPhase.SEARCH, team, currLoc);
+                Direction updated_dir = redirect(dir, true);
+                tryMoveWithCatch(updated_dir);
+            }
+                // case 2: Scout bumps into wall
+            else if (!rc.onTheMap(adjacentLoc)) {
                 System.out.println("oops, just bumped into the wall");
                 // TODO (UPDATED): take the wall as a boundary
                 // option 1: redirect the robot to move in different direction
-                    Direction updated_dir = redirect(dir);
+                    // send message to E-center about wall location (?) --> not necessary / war phase?
+                    setMessageFlag(MessageType.WALL, WarPhase.SEARCH, team, currLoc);
+                    Direction updated_dir = redirect(dir, false);
                     tryMoveWithCatch(updated_dir);
                 // option 2: continue with random movement
 //                    randomMovement();
 
+            // case 3: location is occupied
             } else if (rc.isLocationOccupied(adjacentLoc)) {
                 System.out.println("the adjacent location is occupied ;-;");
                 // TODO (UPDATED): process rInfo, should come up with some responses that these scouts
@@ -243,7 +287,6 @@ public strictfp class RobotPlayer {
                 int enemyCount = 0;
                 // process rInfo for adjacent robots
                 for (RobotInfo rInfo : adjacentRInfo) {
-                    Team team = rInfo.getTeam();
                     if (team == enemy) {
                         enemyCount = enemyCount + 1;
                     }
@@ -468,7 +511,8 @@ public strictfp class RobotPlayer {
         Clock.yield();
     }
 
-    void goToECenter() throws Exception {
+    // For Politician bot to move to ECenter
+    void movePoliticianToECenter() throws Exception {
         // listen to mom and move to the target ECenter
         // TODO: what if we cannot get there
         int actionRS = rc.getType().actionRadiusSquared;
