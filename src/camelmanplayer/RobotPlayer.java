@@ -186,6 +186,26 @@ public strictfp class RobotPlayer {
         }
     }
 
+
+
+    static Direction diverge(int enemyCount, int enemyThreshold) throws GameActionException {
+        Team ownTeam = rc.getTeam();
+        MapLocation currLoc = rc.getLocation();
+        if (enemyCount > enemyThreshold) {
+            System.out.println("I am in danger:O !");
+            // TODO: write higher level function for sending messages (?)
+            // TODO: should we change the msg format if it's different from sending ECenter location (?)
+            Message dangerMsg = new Message(WarPhase.SEARCH, ownTeam, currLoc, motherLoc);
+            int dangerFlag = FlagProtocol.encode(dangerMsg);
+            if (rc.canSetFlag(dangerFlag)) {
+                rc.setFlag(dangerFlag);
+            }
+        }
+        // avoid dead-lock regardless of team
+        Direction randomDir =  randomDirection();
+        return randomDir;
+    }
+
     boolean tryMoveWithCatch(Direction dir) throws Exception {
         applyUP();
 
@@ -204,7 +224,7 @@ public strictfp class RobotPlayer {
 
             if (!rc.onTheMap(adjacentLoc)) {
                 System.out.println("oops, just bumped into the wall");
-                // TODO: take the wall as a boundary
+                // TODO (UPDATED): take the wall as a boundary
                 // option 1: redirect the robot to move in different direction
                     Direction updated_dir = redirect(dir);
                     tryMoveWithCatch(updated_dir);
@@ -213,40 +233,32 @@ public strictfp class RobotPlayer {
 
             } else if (rc.isLocationOccupied(adjacentLoc)) {
                 System.out.println("the adjacent location is occupied ;-;");
-                // TODO: process rInfo, should come up with some responses that these scouts do specifically in scanning
+                // TODO (UPDATED): process rInfo, should come up with some responses that these scouts
+                //  do specifically in scanning examine how many enemy robots are nearby
                 Team enemy = rc.getTeam().opponent();
                 int adjacentRadius = 1;
-                RobotInfo[] adjacent_lst = rc.senseNearbyRobots(adjacentRadius);
+                RobotInfo[] adjacentRInfo = rc.senseNearbyRobots(adjacentRadius);
                 // check type of robot in Robot Info list
                 int enemyThreshold = 3;
                 int enemyCount = 0;
-                for (RobotInfo rInfo : adjacent_lst) {
-                    RobotType type = rInfo.getType();
+                // process rInfo for adjacent robots
+                for (RobotInfo rInfo : adjacentRInfo) {
                     Team team = rInfo.getTeam();
-                    MapLocation loc = rInfo.getLocation();
                     if (team == enemy) {
                         enemyCount = enemyCount + 1;
                     }
                 }
-                if (enemyCount > enemyThreshold) {
-                    // helper function:
-                    // TODO: need to do something to avoid the enemy robots
-                    // TODO: send flag if # of enemies is > threshold to prevent info being lost if enemy kills scout
-                }
-                else {
-                    // same team, randomMovement to avoid deadlock.
-                    randomMovement();
-                }
+                // update the direction after trying to diverge
+                Direction divergeDir = diverge(enemyCount, enemyThreshold);
+                tryMoveWithCatch(divergeDir);
             } else {
                 System.out.println("cool-down turns:" + rc.getCooldownTurns());
                 System.out.println("still in cool down or something weird happened");
             }
-
             getFlagFromMom();
             turnCount += 1;
             Clock.yield();
             return false;
-
         }
     }
 
