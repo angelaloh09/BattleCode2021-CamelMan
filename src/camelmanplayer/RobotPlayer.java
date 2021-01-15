@@ -206,18 +206,37 @@ public strictfp class RobotPlayer {
                 System.out.println("oops, just bumped into the wall");
                 // TODO: take the wall as a boundary
                 // option 1: redirect the robot to move in different direction
-//                    Direction updated_dir = redirect(dir);
-//                    tryMoveWithCatch(updated_dir);
+                    Direction updated_dir = redirect(dir);
+                    tryMoveWithCatch(updated_dir);
                 // option 2: continue with random movement
 //                    randomMovement();
 
             } else if (rc.isLocationOccupied(adjacentLoc)) {
                 System.out.println("the adjacent location is occupied ;-;");
                 // TODO: process rInfo, should come up with some responses that these scouts do specifically in scanning
-
-                RobotInfo rInfo;
-                rInfo = rc.senseRobotAtLocation(adjacentLoc);
-
+                Team enemy = rc.getTeam().opponent();
+                int adjacentRadius = 1;
+                RobotInfo[] adjacent_lst = rc.senseNearbyRobots(adjacentRadius);
+                // check type of robot in Robot Info list
+                int enemyThreshold = 3;
+                int enemyCount = 0;
+                for (RobotInfo rInfo : adjacent_lst) {
+                    RobotType type = rInfo.getType();
+                    Team team = rInfo.getTeam();
+                    MapLocation loc = rInfo.getLocation();
+                    if (team == enemy) {
+                        enemyCount = enemyCount + 1;
+                    }
+                }
+                if (enemyCount > enemyThreshold) {
+                    // helper function:
+                    // TODO: need to do something to avoid the enemy robots
+                    // TODO: send flag if # of enemies is > threshold to prevent info being lost if enemy kills scout
+                }
+                else {
+                    // same team, randomMovement to avoid deadlock.
+                    randomMovement();
+                }
             } else {
                 System.out.println("cool-down turns:" + rc.getCooldownTurns());
                 System.out.println("still in cool down or something weird happened");
