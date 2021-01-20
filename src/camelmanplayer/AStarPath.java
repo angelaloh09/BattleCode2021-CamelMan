@@ -92,7 +92,7 @@ public class AStarPath {
 
     private static void branchOut(MapLocation location, Set<MapLocation> open, Set<MapLocation> closed) throws GameActionException {
         for (Direction direction: directions) {
-            MapLocation adjacentLoc = rc.adjacentLocation(direction);
+            MapLocation adjacentLoc = location.add(direction);
 
             System.out.println("adjacent loc in branchout: " + adjacentLoc);
             if (adjacentLoc != null && !closed.contains(adjacentLoc)) {
