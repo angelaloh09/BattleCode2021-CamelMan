@@ -55,6 +55,7 @@ public class AStarPath {
                 break;
             }
             branchOut(current, open, closed);
+            System.out.println("The size of open is: "+open.size());
         }
 
         return generatePath(current);
@@ -67,6 +68,7 @@ public class AStarPath {
             case POLITICIAN: maxSquaredDistance = 20; break;
             case SLANDERER: maxSquaredDistance = 15; break;
             case MUCKRAKER: maxSquaredDistance = 35; break;
+            case ENLIGHTENMENT_CENTER: maxSquaredDistance = 22; break;
             default: maxSquaredDistance = 0;
         }
         return !current.isWithinDistanceSquared(initLocation, maxSquaredDistance);
@@ -88,7 +90,7 @@ public class AStarPath {
 
     private static void branchOut(MapLocation location, Set<MapLocation> open, Set<MapLocation> closed) throws GameActionException {
         for (Direction direction: directions) {
-            MapLocation adjacentLoc = rc.adjacentLocation(direction);
+            MapLocation adjacentLoc = location.add(direction);
 
             if (adjacentLoc != null && !closed.contains(adjacentLoc)) {
                 LocationInfo adjacentLocInfo = new LocationInfo(adjacentLoc, location);
@@ -117,6 +119,7 @@ public class AStarPath {
         }
 
         if (result == null) throw new Exception("Empty open set");
+        System.out.println("Next current node is "+result);
         return result;
     }
 

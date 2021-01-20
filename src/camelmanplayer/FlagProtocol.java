@@ -12,6 +12,9 @@ public class FlagProtocol {
 
     static Message decode(int color) {
         String biString = Integer.toBinaryString(color);
+        if (biString.length() != 24) {
+            return null;
+        }
         String tag = biString.substring(0, 6);
 
         if (tag.equals(FlagProtocol.tag)) {

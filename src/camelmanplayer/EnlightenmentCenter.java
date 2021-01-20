@@ -25,8 +25,7 @@ public class EnlightenmentCenter extends RobotPlayer{
         directionIndex = 0;
     }
 
-    static void runEnlightenmentCenter() throws GameActionException {
-
+    static void runEnlightenmentCenter() throws Exception {
         while (true) {
             setFlag();
             warPhase = updateWarPhase();
