@@ -11,7 +11,7 @@ public class FlagProtocol {
     static final String tag = "101010";
 
     static Message decode(int color) {
-        String biString = signExtend(color, 24);
+        String biString = Integer.toBinaryString(color);
         String tag = biString.substring(0, 6);
 
         if (tag.equals(FlagProtocol.tag)) {
@@ -91,7 +91,7 @@ public class FlagProtocol {
             String yCoorStr = signExtend(msg.relativeY, 7);
             return Integer.parseInt(tag + warPhaseStr + teamStr + xCoorStr + yCoorStr, 2);
         } else {
-            return 0;
+            return 8388608;
         }
     }
 
