@@ -33,13 +33,13 @@ public strictfp class RobotPlayer {
 
     static final double[][] scanMoveLeftXYRatio = new double[][] {
             {-Math.sqrt(1.0/2.0), Math.sqrt(1.0/2.0)},
-            {0, 1},
+            {0.0, 1.0},
             {Math.sqrt(1.0/2.0), Math.sqrt(1.0/2.0)},
-            {1, 0},
+            {1.0, 0.0},
             {Math.sqrt(1.0/2.0), -Math.sqrt(1.0/2.0)},
-            {0, -1},
+            {0.0, -1.0},
             {-Math.sqrt(1.0/2.0), -Math.sqrt(1.0/2.0)},
-            {-1, 0}
+            {-1.0, 0.0}
     };
 
     static final double[][] scanMoveRightXYRatio = new double[][] {
@@ -161,6 +161,51 @@ public strictfp class RobotPlayer {
         }
     }
 
+    static Direction redirect(Direction dir) {
+        switch (dir){
+            case NORTH:
+                return Direction.WEST;
+            case WEST:
+                return Direction.SOUTH;
+            case SOUTH:
+                return Direction.EAST;
+            case EAST:
+                return Direction.NORTH;
+            case NORTHWEST:
+                return Direction.SOUTHWEST;
+            case SOUTHWEST:
+                return Direction.SOUTHEAST;
+            case SOUTHEAST:
+                return Direction.NORTHEAST;
+            case NORTHEAST:
+                return Direction.NORTHWEST;
+            default:
+                Direction random_dir = directions[(int) (directions.length * Math.random())];
+                return random_dir;
+            // TODO: cases for corners (maybe set some round counter --> default = random movement)
+        }
+    }
+
+
+
+    static Direction diverge(int enemyCount, int enemyThreshold) throws GameActionException {
+        Team ownTeam = rc.getTeam();
+        MapLocation currLoc = rc.getLocation();
+        if (enemyCount > enemyThreshold) {
+            System.out.println("I am in danger:O !");
+            // TODO: write higher level function for sending messages (?)
+            // TODO: should we change the msg format if it's different from sending ECenter location (?)
+            Message dangerMsg = new Message(WarPhase.SEARCH, ownTeam, currLoc, motherLoc);
+            int dangerFlag = FlagProtocol.encode(dangerMsg);
+            if (rc.canSetFlag(dangerFlag)) {
+                rc.setFlag(dangerFlag);
+            }
+        }
+        // avoid dead-lock regardless of team
+        Direction randomDir =  randomDirection();
+        return randomDir;
+    }
+
     boolean tryMoveWithCatch(Direction dir) throws Exception {
         applyUP();
 
@@ -179,30 +224,45 @@ public strictfp class RobotPlayer {
 
             if (!rc.onTheMap(adjacentLoc)) {
                 System.out.println("oops, just bumped into the wall");
-                // TODO: take the wall as a boundary
+                // TODO (UPDATED): take the wall as a boundary
+                // option 1: redirect the robot to move in different direction
+                    Direction updated_dir = redirect(dir);
+                    tryMoveWithCatch(updated_dir);
+                // option 2: continue with random movement
+//                    randomMovement();
 
             } else if (rc.isLocationOccupied(adjacentLoc)) {
                 System.out.println("the adjacent location is occupied ;-;");
-                // TODO: process rInfo, should come up with some responses that these scouts do specifically in scanning
-
-                RobotInfo rInfo;
-                rInfo = rc.senseRobotAtLocation(adjacentLoc);
-
+                // TODO (UPDATED): process rInfo, should come up with some responses that these scouts
+                //  do specifically in scanning examine how many enemy robots are nearby
+                Team enemy = rc.getTeam().opponent();
+                int adjacentRadius = 1;
+                RobotInfo[] adjacentRInfo = rc.senseNearbyRobots(adjacentRadius);
+                // check type of robot in Robot Info list
+                int enemyThreshold = 3;
+                int enemyCount = 0;
+                // process rInfo for adjacent robots
+                for (RobotInfo rInfo : adjacentRInfo) {
+                    Team team = rInfo.getTeam();
+                    if (team == enemy) {
+                        enemyCount = enemyCount + 1;
+                    }
+                }
+                // update the direction after trying to diverge
+                Direction divergeDir = diverge(enemyCount, enemyThreshold);
+                tryMoveWithCatch(divergeDir);
             } else {
                 System.out.println("cool-down turns:" + rc.getCooldownTurns());
                 System.out.println("still in cool down or something weird happened");
             }
-
             getFlagFromMom();
             turnCount += 1;
             Clock.yield();
             return false;
-
         }
     }
 
     // search phase
-
     /** keep the bot moving when it hasn't reached the destination */
     void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
         System.out.println(rc.getLocation().distanceSquaredTo(destination));
@@ -259,8 +319,10 @@ public strictfp class RobotPlayer {
 
     /** turn 45 degree CCW and move the bot to the left boundary */
     void scanMoveLeft(int i, MapLocation ECenterLoc) throws Exception {
-        System.out.println("inside scan move left");
+        System.out.println("Scan move left function");
         MapLocation currLoc = rc.getLocation();
+
+        System.out.println("i direction" + i);
 
         int xDiffToECenter = Math.abs(currLoc.x - ECenterLoc.x);
         int yDiffToECenter = Math.abs(currLoc.y - ECenterLoc.y);
@@ -270,10 +332,19 @@ public strictfp class RobotPlayer {
         // the distance between the current location and the destination on th left boundary
         double travelDist = yDiffToECenter + (1 + Math.sqrt(2)) * xDiffToECenter;
         System.out.println("travelDist" + travelDist);
+        System.out.println("yDiffToECenter" + yDiffToECenter);
+        System.out.println("xDiffToECenter" + xDiffToECenter);
 
         // the coordinate difference to the destination
+//        System.out.println("i direction" + i );
         int xDiff = (int) (travelDist * scanMoveLeftXYRatio[i][0]);
         int yDiff = (int) (travelDist * scanMoveLeftXYRatio[i][1]);
+
+        System.out.println("xDiff" + xDiff);
+        System.out.println("yDiff" + yDiff);
+
+        System.out.println("scanMoveLeftXYRatio[0]" + scanMoveLeftXYRatio[i][0]);
+        System.out.println("scanMoveLeftXYRatio[1]" + scanMoveLeftXYRatio[i][1]);
 
         scanMove(xDiff, yDiff);
     }
