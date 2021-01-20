@@ -95,7 +95,7 @@ public class AStarPath {
             MapLocation adjacentLoc = location.add(direction);
 
             System.out.println("adjacent loc in branchout: " + adjacentLoc);
-            if (adjacentLoc != null && !closed.contains(adjacentLoc)) {
+            if (adjacentLoc != null && !closed.contains(adjacentLoc) && rc.canSenseLocation(adjacentLoc)) {
                 LocationInfo adjacentLocInfo = new LocationInfo(adjacentLoc, location);
 
                 LocationInfo oldAdjacentLocInfo = travelCostMap.get(adjacentLoc);
