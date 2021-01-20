@@ -8,32 +8,51 @@ import org.omg.IOP.TAG_ALTERNATE_IIOP_ADDRESS;
  * **/
 public class FlagProtocol {
 
-    static final String tag = "10101010";
+    static final String tag = "101010";
 
     static Message decode(int color) {
-        String biString = zeroExtend(color, 24);
-        String tag = biString.substring(0, 8);
+        String biString = Integer.toBinaryString(color);
+        if (biString.length() != 24) {
+            return null;
+        }
+        String tag = biString.substring(0, 6);
 
         if (tag.equals(FlagProtocol.tag)) {
-            String warPhaseStr = biString.substring(8, 10);
-            String teamStr = biString.substring(10, 12);
-            String xCoorStr = biString.substring(12, 18);
-            String yCoorStr = biString.substring(18, 24);
+            String warPhaseStr = biString.substring(6, 8);
+            String teamStr = biString.substring(8, 10);
+            String xCoorStr = biString.substring(10, 17);
+            String yCoorStr = biString.substring(17, 24);
 
             RobotPlayer.WarPhase warPhase = biStringToWarPhase(warPhaseStr);
             Team team = biStringToTeam(teamStr);
-            int xCoor = Integer.parseInt(xCoorStr, 2);
-            int yCoor = Integer.parseInt(yCoorStr, 2);
+            int xCoor = decodeSignedNum(xCoorStr);
+            int yCoor = decodeSignedNum(yCoorStr);
 
             return new Message(warPhase, team, xCoor, yCoor);
         }
         return null;
     }
 
-    static String zeroExtend(int num, int length) {
-        String rawBiString = Integer.toBinaryString(num);
-        String zeros = new String(new char[length-rawBiString.length()]).replace("\0", "0");
-        return zeros+rawBiString;
+    static int decodeSignedNum(String signedBiString) {
+        int absVal = Integer.parseInt(signedBiString.substring(1), 2);
+        if (signedBiString.charAt(0) == '0'){
+            return absVal;
+        } else {
+            return -absVal;
+        }
+    }
+
+    static String signExtend(int num, int length) {
+        int absVal = Math.abs(num);
+        String rawBiString = Integer.toBinaryString(absVal);
+        int numOfZeros = length-rawBiString.length()-1;
+        String zeros = "";
+        if (numOfZeros > 0) zeros = new String(new char[numOfZeros]).replace("\0", "0");
+        if (num < 0) {
+            return "1"+zeros+rawBiString;
+        } else {
+            return "0"+zeros+rawBiString;
+        }
     }
 
     static Team biStringToTeam(String teamStr) {
@@ -71,11 +90,11 @@ public class FlagProtocol {
         if (msg != null) {
             String warPhaseStr = warPhaseToBiString(msg.warPhase);
             String teamStr = teamToBiString(msg.team);
-            String xCoorStr = zeroExtend(msg.relativeX, 6);
-            String yCoorStr = zeroExtend(msg.relativeY, 6);
+            String xCoorStr = signExtend(msg.relativeX, 7);
+            String yCoorStr = signExtend(msg.relativeY, 7);
             return Integer.parseInt(tag + warPhaseStr + teamStr + xCoorStr + yCoorStr, 2);
         } else {
-            return 0;
+            return 8388608;
         }
     }
 
