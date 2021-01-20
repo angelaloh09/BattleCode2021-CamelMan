@@ -10,6 +10,7 @@ public class Slanderer extends RobotPlayer{
         this.rc = rc;
     }
 
+    // TODO: control it as a politician later
     void runSlanderer() throws GameActionException {
         while (true) {
             if (tryMove(randomDirection())) System.out.println("I moved!");

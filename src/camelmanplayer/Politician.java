@@ -20,6 +20,7 @@ public class Politician extends RobotPlayer{
                     break;
                 case CONQUER:
                     System.out.println("I am conquering!");
+                    // TODO: think of something more powerful
                     goToECenter();
                     break;
                 case ATTACK:

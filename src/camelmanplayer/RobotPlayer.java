@@ -81,12 +81,10 @@ public strictfp class RobotPlayer {
 
         turnCount = 0;
 
-//        System.out.println("I'm a " + rc.getType() + " and I just got created!");
         // Try/catch blocks stop unhandled exceptions, which cause your robot to freeze
         try {
             // Here, we've separated the controls into a different method for each RobotType.
             // You may rewrite this into your own control structure if you wish.
-//            System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
             switch (rc.getType()) {
                 case ENLIGHTENMENT_CENTER:
                     EnlightenmentCenter myEnlightenmentCenter = new EnlightenmentCenter(rc);
@@ -138,7 +136,6 @@ public strictfp class RobotPlayer {
      * @throws GameActionException
      */
     static boolean tryMove(Direction dir) throws GameActionException {
-        System.out.println("I am trying to move " + dir + "; " + rc.isReady() + " " + rc.getCooldownTurns() + " " + rc.canMove(dir));
         if (rc.canMove(dir)) {
             rc.move(dir);
             return true;
@@ -182,19 +179,16 @@ public strictfp class RobotPlayer {
             default:
                 Direction random_dir = directions[(int) (directions.length * Math.random())];
                 return random_dir;
-            // TODO: cases for corners (maybe set some round counter --> default = random movement)
         }
     }
 
 
-
+    // TODO: merge Angela's code
     static Direction diverge(int enemyCount, int enemyThreshold) throws GameActionException {
         Team ownTeam = rc.getTeam();
         MapLocation currLoc = rc.getLocation();
         if (enemyCount > enemyThreshold) {
             System.out.println("I am in danger:O !");
-            // TODO: write higher level function for sending messages (?)
-            // TODO: should we change the msg format if it's different from sending ECenter location (?)
             Message dangerMsg = new Message(WarPhase.SEARCH, ownTeam, currLoc, motherLoc);
             int dangerFlag = FlagProtocol.encode(dangerMsg);
             if (rc.canSetFlag(dangerFlag)) {
@@ -215,7 +209,6 @@ public strictfp class RobotPlayer {
             getFlagFromMom();
             turnCount += 1;
             Clock.yield();
-            System.out.println("I've been alive for "+turnCount+" turns!");
             return true;
         } catch (GameActionException cannotMove) {
             System.out.println("oops, cannot move");
@@ -224,7 +217,6 @@ public strictfp class RobotPlayer {
 
             if (!rc.onTheMap(adjacentLoc)) {
                 System.out.println("oops, just bumped into the wall");
-                // TODO (UPDATED): take the wall as a boundary
                 // option 1: redirect the robot to move in different direction
                     Direction updated_dir = redirect(dir);
                     tryMoveWithCatch(updated_dir);
@@ -233,8 +225,6 @@ public strictfp class RobotPlayer {
 
             } else if (rc.isLocationOccupied(adjacentLoc)) {
                 System.out.println("the adjacent location is occupied ;-;");
-                // TODO (UPDATED): process rInfo, should come up with some responses that these scouts
-                //  do specifically in scanning examine how many enemy robots are nearby
                 Team enemy = rc.getTeam().opponent();
                 int adjacentRadius = 1;
                 RobotInfo[] adjacentRInfo = rc.senseNearbyRobots(adjacentRadius);
@@ -253,7 +243,6 @@ public strictfp class RobotPlayer {
                 tryMoveWithCatch(divergeDir);
             } else {
                 System.out.println("cool-down turns:" + rc.getCooldownTurns());
-                System.out.println("still in cool down or something weird happened");
             }
             getFlagFromMom();
             turnCount += 1;
@@ -265,16 +254,10 @@ public strictfp class RobotPlayer {
     // search phase
     /** keep the bot moving when it hasn't reached the destination */
     void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
-        System.out.println(rc.getLocation().distanceSquaredTo(destination));
-        System.out.println(rc.getLocation().distanceSquaredTo(destination) > squaredDis);
         while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
-            System.out.println("inside moveTD's while loop");
             // a list of locations to go to the location closest to the destination
             LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, destination);
-            System.out.println("length of planned path" + locs.size());
-            System.out.println("My path to "+destination+" is "+locs);
             while (!locs.isEmpty()) {
-//                System.out.println("I'm trying to move to "+destination);
                 // if we haven't reached the closest location, keep going
                 MapLocation tail = locs.getLast();
                 Direction nextDir = rc.getLocation().directionTo(tail);
@@ -293,8 +276,6 @@ public strictfp class RobotPlayer {
         System.out.println("yDiff: " + yDiff);
         MapLocation currLoc = rc.getLocation();
         MapLocation dest = currLoc.translate(xDiff, yDiff);
-        System.out.println("target x: " + dest.x);
-        System.out.println("target y: " + dest.y);
         moveToDestination(dest, 0);
     }
 
@@ -309,7 +290,6 @@ public strictfp class RobotPlayer {
 
     /** turn 135 degree CW and move the bot to the right boundary */
     void scanMoveRight(int i, MapLocation lastMainAxisLoc) throws Exception {
-        System.out.println("inside scan move right");
         MapLocation currLoc = rc.getLocation();
         // calculate the second boundary
         int xDiff = (int) (Math.abs(lastMainAxisLoc.x - currLoc.x) * scanMoveRightXYRatio[i][0]);
@@ -319,32 +299,21 @@ public strictfp class RobotPlayer {
 
     /** turn 45 degree CCW and move the bot to the left boundary */
     void scanMoveLeft(int i, MapLocation ECenterLoc) throws Exception {
-        System.out.println("Scan move left function");
         MapLocation currLoc = rc.getLocation();
 
         System.out.println("i direction" + i);
 
-        int xDiffToECenter = Math.abs(currLoc.x - ECenterLoc.x);
-        int yDiffToECenter = Math.abs(currLoc.y - ECenterLoc.y);
+        int xDiffToECenter = Math.abs(currLoc.x - motherLoc.x);
+        int yDiffToECenter = Math.abs(currLoc.y - motherLoc.y);
         System.out.println("xDiffToEC: " + xDiffToECenter);
         System.out.println("yDiffToEC: " + yDiffToECenter);
 
         // the distance between the current location and the destination on th left boundary
         double travelDist = yDiffToECenter + (1 + Math.sqrt(2)) * xDiffToECenter;
-        System.out.println("travelDist" + travelDist);
-        System.out.println("yDiffToECenter" + yDiffToECenter);
-        System.out.println("xDiffToECenter" + xDiffToECenter);
 
         // the coordinate difference to the destination
-//        System.out.println("i direction" + i );
         int xDiff = (int) (travelDist * scanMoveLeftXYRatio[i][0]);
         int yDiff = (int) (travelDist * scanMoveLeftXYRatio[i][1]);
-
-        System.out.println("xDiff" + xDiff);
-        System.out.println("yDiff" + yDiff);
-
-        System.out.println("scanMoveLeftXYRatio[0]" + scanMoveLeftXYRatio[i][0]);
-        System.out.println("scanMoveLeftXYRatio[1]" + scanMoveLeftXYRatio[i][1]);
 
         scanMove(xDiff, yDiff);
     }
@@ -364,6 +333,7 @@ public strictfp class RobotPlayer {
     }
 
     /** make the bot make zigzag movements while it's scanning its section */
+    // TODO: this function is not called every round: BECKY
     void scanMoveZigzag(double fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
         // move to the left boundary from the central line
         scanFstMoveLeft(i, fstTravelDist);
@@ -414,9 +384,7 @@ public strictfp class RobotPlayer {
         // main direction of scanning
         Direction direction;
         MapLocation startLoc = rc.getLocation();
-        System.out.println("My mother's location is "+motherLoc);
         direction = motherLoc.directionTo(startLoc);
-        System.out.println("my main direction is " + direction);
 
         try {
             // first move one step forward in this direction
@@ -434,7 +402,6 @@ public strictfp class RobotPlayer {
             double fstTravelDist = Math.sqrt((currLocx - startLoc.x) ^ 2 + (currLocy - startLoc.y) ^ 2);
 
             int i = Arrays.asList(directions).indexOf(direction);
-            System.out.println("i is " + i);
             scanMoveZigzag(fstTravelDist, i, rc.getLocation(), startLoc);
 
         } catch (Exception e) {
@@ -470,17 +437,20 @@ public strictfp class RobotPlayer {
         }
     }
 
+    // TODO: add a while loop to try all 8 directions
     void randomMovement() throws GameActionException {
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
-        turnCount += 1;
+        System.out.println("doing random movement");
+        if (tryMove(randomDirection())) {
+            turnCount += 1;
+        } else {
+            // if it cannot move in this direction, try to move in another random direction
+        }
         getFlagFromMom();
         Clock.yield();
     }
 
     void goToECenter() throws Exception {
         // listen to mom and move to the target ECenter
-        // TODO: what if we cannot get there
         int actionRS = rc.getType().actionRadiusSquared;
         moveToDestination(targetECenter, actionRS);
 
