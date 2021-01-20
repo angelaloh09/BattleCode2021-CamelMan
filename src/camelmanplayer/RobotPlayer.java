@@ -90,12 +90,12 @@ public strictfp class RobotPlayer {
 
         turnCount = 0;
 
-        System.out.println("I'm a " + rc.getType() + " and I just got created!");
+//        System.out.println("I'm a " + rc.getType() + " and I just got created!");
         // Try/catch blocks stop unhandled exceptions, which cause your robot to freeze
         try {
             // Here, we've separated the controls into a different method for each RobotType.
             // You may rewrite this into your own control structure if you wish.
-            System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
+//            System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
             switch (rc.getType()) {
                 case ENLIGHTENMENT_CENTER:
                     EnlightenmentCenter myEnlightenmentCenter = new EnlightenmentCenter(rc);
@@ -308,12 +308,16 @@ public strictfp class RobotPlayer {
     // search phase
     /** keep the bot moving when it hasn't reached the destination */
     void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
+        System.out.println(rc.getLocation().distanceSquaredTo(destination));
+        System.out.println(rc.getLocation().distanceSquaredTo(destination) > squaredDis);
         while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
+            System.out.println("inside moveTD's while loop");
             // a list of locations to go to the location closest to the destination
             LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, destination);
+            System.out.println("length of planned path" + locs.size());
             System.out.println("My path to "+destination+" is "+locs);
             while (!locs.isEmpty()) {
-                System.out.println("I'm trying to move to "+destination);
+//                System.out.println("I'm trying to move to "+destination);
                 // if we haven't reached the closest location, keep going
                 MapLocation tail = locs.getLast();
                 Direction nextDir = rc.getLocation().directionTo(tail);
@@ -327,13 +331,19 @@ public strictfp class RobotPlayer {
     }
 
     void scanMove(int xDiff, int yDiff) throws Exception {
+        System.out.println("inside scan move");
+        System.out.println("xDiff: " + xDiff);
+        System.out.println("yDiff: " + yDiff);
         MapLocation currLoc = rc.getLocation();
         MapLocation dest = currLoc.translate(xDiff, yDiff);
+        System.out.println("target x: " + dest.x);
+        System.out.println("target y: " + dest.y);
         moveToDestination(dest, 0);
     }
 
     /** let the bot make the first turn when it's scanning its section */
     void scanFstMoveLeft(int i, double travelDist) throws Exception {
+        System.out.println("inside scan fst move left");
         // first left boundary location
         int xDiff = (int) (travelDist * scanMoveLeftXYRatio[i][0]);
         int yDiff = (int) (travelDist * scanMoveLeftXYRatio[i][1]);
@@ -342,6 +352,7 @@ public strictfp class RobotPlayer {
 
     /** turn 135 degree CW and move the bot to the right boundary */
     void scanMoveRight(int i, MapLocation lastMainAxisLoc) throws Exception {
+        System.out.println("inside scan move right");
         MapLocation currLoc = rc.getLocation();
         // calculate the second boundary
         int xDiff = (int) (Math.abs(lastMainAxisLoc.x - currLoc.x) * scanMoveRightXYRatio[i][0]);
@@ -358,6 +369,8 @@ public strictfp class RobotPlayer {
 
         int xDiffToECenter = Math.abs(currLoc.x - ECenterLoc.x);
         int yDiffToECenter = Math.abs(currLoc.y - ECenterLoc.y);
+        System.out.println("xDiffToEC: " + xDiffToECenter);
+        System.out.println("yDiffToEC: " + yDiffToECenter);
 
         // the distance between the current location and the destination on th left boundary
         double travelDist = yDiffToECenter + (1 + Math.sqrt(2)) * xDiffToECenter;
@@ -395,10 +408,6 @@ public strictfp class RobotPlayer {
 
     /** make the bot make zigzag movements while it's scanning its section */
     void scanMoveZigzag(double fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
-        // left direction
-        int leftDirIdx = (i+7) % directions.length;
-        Direction leftDir = directions[leftDirIdx];
-
         // move to the left boundary from the central line
         scanFstMoveLeft(i, fstTravelDist);
 
@@ -422,7 +431,6 @@ public strictfp class RobotPlayer {
         getFlagFromMom();
 
         while (warPhase == WarPhase.SEARCH) {
-
             // first move right
             scanMoveRight(i, lastMainAxisLoc);
 
@@ -447,10 +455,11 @@ public strictfp class RobotPlayer {
     void scanMap() {
         // initialize the movement by getting the E-center coordinates
         // main direction of scanning
-        Direction direction = directions[(int) (directions.length * Math.random())];
+        Direction direction;
         MapLocation startLoc = rc.getLocation();
         System.out.println("My mother's location is "+motherLoc);
         direction = motherLoc.directionTo(startLoc);
+        System.out.println("my main direction is " + direction);
 
         try {
             // first move one step forward in this direction
@@ -468,6 +477,7 @@ public strictfp class RobotPlayer {
             double fstTravelDist = Math.sqrt((currLocx - startLoc.x) ^ 2 + (currLocy - startLoc.y) ^ 2);
 
             int i = Arrays.asList(directions).indexOf(direction);
+            System.out.println("i is " + i);
             scanMoveZigzag(fstTravelDist, i, rc.getLocation(), startLoc);
 
         } catch (Exception e) {
