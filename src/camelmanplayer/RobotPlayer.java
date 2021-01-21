@@ -189,10 +189,11 @@ public strictfp class RobotPlayer {
             MapLocation loc = rInfo.getLocation();
             if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
                 // send the info of this ECenter to mom
-                System.out.println("I found an enlightenment center!");
-                Message msg = new Message(WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
+                System.out.println("I found an enlightenment center: "+loc);
+                Message msg = new Message(MessageType.ECENTER, WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
                 int flag = FlagProtocol.encode(msg);
                 if (rc.canSetFlag(flag)) {
+                    System.out.println("I set the flag!");
                     rc.setFlag(flag);
                 }
             }
@@ -227,7 +228,6 @@ public strictfp class RobotPlayer {
             getFlagFromMom();
             turnCount += 1;
             Clock.yield();
-            System.out.println("I've been alive for "+turnCount+" turns!");
             return "moved";
         } catch (GameActionException cannotMove) {
             System.out.println("oops, cannot move");
@@ -280,25 +280,45 @@ public strictfp class RobotPlayer {
     // search phase
     /** keep the bot moving when it hasn't reached the destination
      while scanning the surrounding for new ECenter */
-    void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
+//    void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
+//        while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
+//            // a list of locations to go to the location closest to the destination
+//            LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, destination);
+//            while (!locs.isEmpty()) {
+//                // if we haven't reached the closest location, keep going
+//                MapLocation tail = locs.getLast();
+//                Direction nextDir = rc.getLocation().directionTo(tail);
+//                String moveMsg = tryMoveWithCatch(nextDir);
+//                if (moveMsg == "moved") {
+//                    // if we've moved to the first node successfully, remove the first node
+//                    locs.removeLast();
+//                }
+//                if (moveMsg == "didRandomMove") {
+//                    locs = AStarPath.aStarPlanning(rc, destination);
+//                }
+//                if (nextPhase != warPhase) return;
+//            }
+//        }
+//    }
+
+    void moveToDestination (MapLocation destination, int squaredDis) throws GameActionException {
+        int count = 0;
+        System.out.println("I am going to: "+destination);
         while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
-            // a list of locations to go to the location closest to the destination
-            LinkedList<MapLocation> locs = AStarPath.aStarPlanning(rc, destination);
-            while (!locs.isEmpty()) {
-                // if we haven't reached the closest location, keep going
-                MapLocation tail = locs.getLast();
-                Direction nextDir = rc.getLocation().directionTo(tail);
-                String moveMsg = tryMoveWithCatch(nextDir);
-                if (moveMsg == "moved") {
-                    // if we've moved to the first node successfully, remove the first node
-                    locs.removeLast();
-                }
-                if (moveMsg == "didRandomMove") {
-                    locs = AStarPath.aStarPlanning(rc, destination);
-                }
-                if (nextPhase != warPhase) return;
+            applyUP();
+            senseNewEC();
+            getFlagFromMom();
+            Direction dir = rc.getLocation().directionTo(destination);
+            if (!tryMove(dir)) {
+                count++;
             }
+            if (count > 5) {
+                randomMovement();
+                count = 0;
+            }
+            if (nextPhase != warPhase) return;
         }
+        System.out.println("I arrived at: "+destination);
     }
 
     /** a higher order function for scanMoveLeft and scanMoveRight */
@@ -355,8 +375,9 @@ public strictfp class RobotPlayer {
             Message motherMsg = FlagProtocol.decode(rc.getFlag(motherId));
             if (motherMsg != null) {
                 targetECenter = motherMsg.getMapLocation(motherLoc);
-                warPhase = motherMsg.warPhase;
+                nextPhase = motherMsg.warPhase;
                 enlightenmentCenters.put(targetECenter, motherMsg.team);
+                System.out.println("Mother told me: "+warPhase+" with target "+targetECenter);
             }
         } else {
             warPhase = WarPhase.DEFEND;
@@ -369,6 +390,7 @@ public strictfp class RobotPlayer {
     void scanMoveZigzag(double fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
         // move to the left boundary from the central line
         scanFstMoveLeft(i, fstTravelDist);
+        if (nextPhase != warPhase) return;
 
         // get info from mom to see if we need to keep scanning
         getFlagFromMom();
@@ -379,6 +401,7 @@ public strictfp class RobotPlayer {
 
             // then move left
             scanMoveLeft(i, ECenterLoc);
+            if (nextPhase != warPhase) return;
         }
 
     }
@@ -407,6 +430,9 @@ public strictfp class RobotPlayer {
             int movedSteps = 0;
             while (movedSteps < 3) {
                 if (tryMoveWithCatch(direction).equals("moved")) movedSteps++;
+                System.out.println("I am in the while loop QWQ");
+                System.out.println("moveSteps: "+movedSteps);
+                if (nextPhase != warPhase) return;
             }
 
             // current location
@@ -419,6 +445,7 @@ public strictfp class RobotPlayer {
 
             int i = Arrays.asList(directions).indexOf(direction);
             scanMoveZigzag(fstTravelDist, i, rc.getLocation(), startLoc);
+            if (nextPhase != warPhase) return;
 
         } catch (Exception e) {
             System.out.println(e);

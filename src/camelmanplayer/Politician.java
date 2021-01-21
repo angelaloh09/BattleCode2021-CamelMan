@@ -13,6 +13,7 @@ public class Politician extends RobotPlayer{
 
         // movements by stages
         while (true) {
+            warPhase = nextPhase;
             switch (warPhase) {
                 case SEARCH:
                     System.out.println("I am scanning!");
@@ -32,6 +33,7 @@ public class Politician extends RobotPlayer{
                     break;
                 default:
                     System.out.println("I am moving randomly!");
+                    getFlagFromMom();
                     randomMovement();
                     break;
             }

@@ -13,6 +13,7 @@ public class Muckraker extends RobotPlayer {
 
         // movements by stages
         while (true) {
+            warPhase = nextPhase;
             switch (warPhase) {
                 case SEARCH:
                     scanMap();
@@ -20,6 +21,7 @@ public class Muckraker extends RobotPlayer {
                     break;
                 case CONQUER:
                     mUniversalPrinciple();
+                    randomMovement();
                     System.out.println("I am conquering!");
                     break;
                 case ATTACK:
@@ -27,10 +29,12 @@ public class Muckraker extends RobotPlayer {
                     System.out.println("I am attacking!");
                     break;
                 case DEFEND:
+                    getFlagFromMom();
                     mUniversalPrinciple();
                     System.out.println("I am defending!");
                     break;
                 default:
+                    getFlagFromMom();
                     randomMovement();
                     break;
             }

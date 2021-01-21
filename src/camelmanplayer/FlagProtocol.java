@@ -8,16 +8,17 @@ import org.omg.IOP.TAG_ALTERNATE_IIOP_ADDRESS;
  * **/
 public class FlagProtocol {
 
-    static final String tag = "101010";
+    static final String tag = "1010";
 
     static Message decode(int color) {
         String biString = Integer.toBinaryString(color);
         if (biString.length() != 24) {
             return null;
         }
-        String tag = biString.substring(0, 6);
+        String tag = biString.substring(0, 4);
 
         if (tag.equals(FlagProtocol.tag)) {
+            String msgTypeStr = biString.substring(4, 6);
             String warPhaseStr = biString.substring(6, 8);
             String teamStr = biString.substring(8, 10);
             String xCoorStr = biString.substring(10, 17);
@@ -29,8 +30,6 @@ public class FlagProtocol {
             Team team = biStringToTeam(teamStr);
             int xCoor = decodeSignedNum(xCoorStr);
             int yCoor = decodeSignedNum(yCoorStr);
-
-//            return new Message(warPhase, team, xCoor, yCoor);
 
             return new Message(msgType, warPhase, team, xCoor, yCoor); //UPDATED
         }
@@ -111,7 +110,7 @@ public class FlagProtocol {
             String teamStr = teamToBiString(msg.team);
             String xCoorStr = signExtend(msg.relativeX, 7);
             String yCoorStr = signExtend(msg.relativeY, 7);
-            return Integer.parseInt(tag + warPhaseStr + teamStr + xCoorStr + yCoorStr, 2);
+            return Integer.parseInt(tag + msgTypeStr + warPhaseStr + teamStr + xCoorStr + yCoorStr, 2);
         } else {
             return 8388608;
         }

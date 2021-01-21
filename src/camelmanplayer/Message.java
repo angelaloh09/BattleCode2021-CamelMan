@@ -14,29 +14,38 @@ class Message {
     int relativeX;
     int relativeY;
 
-    Message(RobotPlayer.WarPhase warP, Team team, int x, int y) {
-        this.team = team;
-        warPhase = warP;
-        relativeX = x;
-        relativeY = y;
-    }
+//    Message(RobotPlayer.WarPhase warP, Team team, int x, int y) {
+//        this.team = team;
+//        warPhase = warP;
+//        relativeX = x;
+//        relativeY = y;
+//    }
 
-    Message(RobotPlayer.WarPhase warP, Team team) {
+//    Message(RobotPlayer.WarPhase warP, Team team) {
+//        this.team = team;
+//        warPhase = warP;
+//        relativeX = 0;
+//        relativeY = 0;
+//    }
+
+//    Message(RobotPlayer.WarPhase warP, Team team, MapLocation targetLocation, MapLocation eCenterLocation) {
+//        this.team = team;
+//        warPhase = warP;
+//        relativeX = targetLocation.x-eCenterLocation.x;
+//        relativeY = targetLocation.y-eCenterLocation.y;
+//    }
+
+
+
+    Message(RobotPlayer.MessageType msgType, RobotPlayer.WarPhase warP, Team team) {
         this.team = team;
+        this.msgType = msgType;
         warPhase = warP;
         relativeX = 0;
         relativeY = 0;
     }
 
-    Message(RobotPlayer.WarPhase warP, Team team, MapLocation targetLocation, MapLocation eCenterLocation) {
-        this.team = team;
-        warPhase = warP;
-        relativeX = targetLocation.x-eCenterLocation.x;
-        relativeY = targetLocation.y-eCenterLocation.y;
-    }
-
     // message sent when scout is in danger (includes message type)
-    // TODO: confused about this constructor
     Message(RobotPlayer.MessageType mType, RobotPlayer.WarPhase warP, Team team, int xCoor, int yCoor){
         this.team = team;
         msgType = mType;
