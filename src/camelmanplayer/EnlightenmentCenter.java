@@ -25,14 +25,22 @@ public class EnlightenmentCenter extends RobotPlayer{
         directionIndex = 0;
     }
 
-    static void runEnlightenmentCenter() throws GameActionException {
-
+    static void runEnlightenmentCenter() throws Exception {
         while (true) {
             setFlag();
             warPhase = updateWarPhase();
             buildRobot();
             listenToChildRobots();
+            randomBid();
+            System.out.println(enlightenmentCenters.size());
             Clock.yield();
+        }
+    }
+
+    static void randomBid() throws GameActionException {
+        int influenceForBid = (int) (rc.getInfluence() * 0.04);
+        if (rc.canBid(influenceForBid)) {
+            rc.bid(influenceForBid);
         }
     }
 
@@ -56,8 +64,13 @@ public class EnlightenmentCenter extends RobotPlayer{
             return WarPhase.DEFEND;
         }
 
-        if (enlightenmentCenters.size() == 1) return WarPhase.SEARCH;
-        else return WarPhase.ATTACK;
+        if (enlightenmentCenters.size() == 1) {
+            return WarPhase.SEARCH;
+        }
+        else if (getClosestEnlightmentCenter(opponent) != null) {
+            return WarPhase.ATTACK;
+        }
+        return WarPhase.SEARCH;
     }
 
     static void setFlag() throws GameActionException {
@@ -65,20 +78,22 @@ public class EnlightenmentCenter extends RobotPlayer{
         switch (warPhase) {
             case SEARCH:
                 System.out.println("Time to Search!");
-                msgToSend = new Message(WarPhase.SEARCH, rc.getTeam()); break;
+                msgToSend = new Message(MessageType.ECENTER, WarPhase.SEARCH, rc.getTeam()); break;
             case CONQUER:
-                System.out.println("Time to Conquer!");
                 MapLocation neutralLocation = getClosestEnlightmentCenter(Team.NEUTRAL);
-                msgToSend = new Message(WarPhase.CONQUER, Team.NEUTRAL, neutralLocation, rc.getLocation());
+                if (neutralLocation != null) {
+                    msgToSend = new Message(MessageType.ECENTER, WarPhase.CONQUER, Team.NEUTRAL, neutralLocation, rc.getLocation());
+                    System.out.println("Time to Conquer "+neutralLocation);
+                }
                 break;
             case ATTACK:
                 System.out.println("Time to Attack!");
                 MapLocation enemyLocation = getClosestEnlightmentCenter(opponent);
-                msgToSend = new Message(WarPhase.ATTACK, opponent, enemyLocation, rc.getLocation());
+                msgToSend = new Message(MessageType.ECENTER, WarPhase.ATTACK, opponent, enemyLocation, rc.getLocation());
                 break;
             case DEFEND:
                 System.out.println("Time to Defend!");
-                msgToSend = new Message(WarPhase.DEFEND, rc.getTeam());
+                msgToSend = new Message(MessageType.ECENTER, WarPhase.DEFEND, rc.getTeam());
                 break;
         }
         int newFlag = FlagProtocol.encode(msgToSend);
@@ -166,8 +181,17 @@ public class EnlightenmentCenter extends RobotPlayer{
                 int robotFlag = rc.getFlag(robotID);
                 Message msg = FlagProtocol.decode(robotFlag);
                 if (msg != null) {
-                    MapLocation msgLocation = msg.getMapLocation(rc.getLocation());
-                    enlightenmentCenters.put(msgLocation,msg.team);
+                    switch (msg.msgType) {
+                        case ECENTER:
+                            MapLocation msgLocation = msg.getMapLocation(rc.getLocation());
+                            enlightenmentCenters.put(msgLocation,msg.team);
+                            break;
+                            //TODO: figure out how to react
+                        case SCOUTDANGER:
+                        case WALL:
+                        case CORNER:
+                            break;
+                    }
                 }
             } else {
                 removeList.add(robotID);
@@ -179,5 +203,6 @@ public class EnlightenmentCenter extends RobotPlayer{
         }
 
         numOfRobotDied += removeList.size();
+        System.out.println("Finished listening to all children at round number: "+turnCount);
     }
 }

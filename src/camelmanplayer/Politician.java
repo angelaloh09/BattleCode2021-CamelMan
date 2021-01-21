@@ -13,6 +13,7 @@ public class Politician extends RobotPlayer{
 
         // movements by stages
         while (true) {
+            warPhase = nextPhase;
             switch (warPhase) {
                 case SEARCH:
                     System.out.println("I am scanning!");
@@ -20,18 +21,19 @@ public class Politician extends RobotPlayer{
                     break;
                 case CONQUER:
                     System.out.println("I am conquering!");
-                    goToECenter();
+                    movePoliticianToECenter();
                     break;
                 case ATTACK:
                     System.out.println("I am attacking!");
-                    goToECenter();
+                    movePoliticianToECenter();
                     break;
                 case DEFEND:
                     System.out.println("I am defending!");
-                    goToECenter();
+                    movePoliticianToECenter();
                     break;
                 default:
                     System.out.println("I am moving randomly!");
+                    getFlagFromMom();
                     randomMovement();
                     break;
             }
