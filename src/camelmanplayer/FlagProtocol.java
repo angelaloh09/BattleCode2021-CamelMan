@@ -23,6 +23,7 @@ public class FlagProtocol {
             String xCoorStr = biString.substring(10, 17);
             String yCoorStr = biString.substring(17, 24);
 
+            // TODO: Ruyu: figure out this issue
             RobotPlayer.MessageType msgType = biStringToMessageType(msgTypeStr);
             RobotPlayer.WarPhase warPhase = biStringToWarPhase(warPhaseStr);
             Team team = biStringToTeam(teamStr);

@@ -72,6 +72,7 @@ public strictfp class RobotPlayer {
 
     static WarPhase warPhase;
 
+    // TODO: figure out how to prioritize each ECenter
     static HashMap<MapLocation, Team> enlightenmentCenters = new HashMap<>();
 
     static MapLocation targetECenter;
