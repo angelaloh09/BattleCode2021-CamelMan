@@ -43,8 +43,8 @@ public class AStarPath {
         travelCostMap.put(initLocation, initLocationInfo);
         open.add(initLocation);
 
-        MapLocation current;
-        while (true) {
+        MapLocation current = initLocation;
+        while (!open.isEmpty()) {
             // Choose the location of the lowest f_cost in the open set as current
             current = findLocationOfLowestCost(open, travelCostMap);
             System.out.println("current: " + current);
@@ -95,7 +95,7 @@ public class AStarPath {
             MapLocation adjacentLoc = location.add(direction);
 
             System.out.println("adjacent loc in branchout: " + adjacentLoc);
-            if (adjacentLoc != null && !closed.contains(adjacentLoc)) {
+            if (!closed.contains(adjacentLoc) && rc.canSenseLocation(adjacentLoc)) {
                 LocationInfo adjacentLocInfo = new LocationInfo(adjacentLoc, location);
 
                 LocationInfo oldAdjacentLocInfo = travelCostMap.get(adjacentLoc);
