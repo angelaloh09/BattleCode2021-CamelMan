@@ -180,6 +180,24 @@ public strictfp class RobotPlayer {
         }
     }
 
+    void senseNewEC() throws GameActionException {
+        RobotInfo[] rInfoLst = rc.senseNearbyRobots();
+        // make sure that this ECenter is not the original one
+        for (RobotInfo rInfo : rInfoLst) {
+            RobotType type = rInfo.getType();
+            MapLocation loc = rInfo.getLocation();
+            if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
+                // send the info of this ECenter to mom
+                System.out.println("I found an enlightenment center!");
+                Message msg = new Message(WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
+                int flag = FlagProtocol.encode(msg);
+                if (rc.canSetFlag(flag)) {
+                    rc.setFlag(flag);
+                }
+            }
+        }
+    }
+
     // UPDATED:
 //    static Direction diverge(int enemyCount, int enemyThreshold) throws GameActionException {
 //        Team team = rc.getTeam();
@@ -195,6 +213,9 @@ public strictfp class RobotPlayer {
 
     String tryMoveWithCatch(Direction dir) throws Exception {
         applyUP();
+        // for each step, scan the surrounding first
+        // TODO: make sure this function is called every round
+        senseNewEC();
 
         Team team = rc.getTeam();
         MapLocation currLoc = rc.getLocation();
@@ -256,7 +277,8 @@ public strictfp class RobotPlayer {
     }
 
     // search phase
-    /** keep the bot moving when it hasn't reached the destination */
+    /** keep the bot moving when it hasn't reached the destination
+     while scanning the surrounding for new ECenter */
     void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
         while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
             // a list of locations to go to the location closest to the destination
@@ -278,6 +300,7 @@ public strictfp class RobotPlayer {
         }
     }
 
+    /** a higher order function for scanMoveLeft and scanMoveRight */
     void scanMove(int xDiff, int yDiff) throws Exception {
         System.out.println("inside scan move");
         System.out.println("xDiff: " + xDiff);
@@ -340,27 +363,11 @@ public strictfp class RobotPlayer {
         }
     }
 
+
     /** make the bot make zigzag movements while it's scanning its section */
-    // TODO: this function is not called every round: BECKY
     void scanMoveZigzag(double fstTravelDist, int i, MapLocation lastMainAxisLoc, MapLocation ECenterLoc) throws Exception{
         // move to the left boundary from the central line
         scanFstMoveLeft(i, fstTravelDist);
-
-        RobotInfo[] rInfoLst = rc.senseNearbyRobots();
-        // make sure that this ECenter is not the original one
-        for (RobotInfo rInfo : rInfoLst) {
-            RobotType type = rInfo.getType();
-            MapLocation loc = rInfo.getLocation();
-            if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
-                // send the info of this ECenter to mom
-                System.out.println("I found an enlightenment center!");
-                Message msg = new Message(WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
-                int flag = FlagProtocol.encode(msg);
-                if (rc.canSetFlag(flag)) {
-                    rc.setFlag(flag);
-                }
-            }
-        }
 
         // get info from mom to see if we need to keep scanning
         getFlagFromMom();
