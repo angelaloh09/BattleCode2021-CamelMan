@@ -6,17 +6,24 @@ import battlecode.common.*;
 public class EnlightenmentCenter extends RobotPlayer{
 
     private static WarPhase warPhase;
-    private static List<Integer> childRobotIds;
     private static int numOfRobotBuilt;
     private static int numOfRobotDied;
+    private static HashMap<Integer, RobotInfo> robotAlive = new HashMap<>();
+    private static HashMap<RobotType, Integer> robotTypeCount = new HashMap<>();
     private static HashMap<MapLocation, Team> enlightenmentCenters;
     private static Team opponent;
     private static int directionIndex;
+    private static final double[][] robotRatio = {
+            {0.3, 0.3, 0.4},
+            {0.7, 0.2, 0.1},
+            {0.5, 0.2, 0.3},
+            {0.5, 0.5, 0.0}
+    };
+
 
     EnlightenmentCenter(RobotController rc) {
         this.rc = rc;
         warPhase = WarPhase.SEARCH;
-        childRobotIds = new LinkedList<>();
         numOfRobotBuilt = 0;
         numOfRobotDied = 0;
         enlightenmentCenters = new HashMap<>();
@@ -48,6 +55,21 @@ public class EnlightenmentCenter extends RobotPlayer{
         return 1 - (double) numOfRobotDied / (double) numOfRobotBuilt;
     }
 
+    static boolean surroundedByEnemy() {
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+        int numOfEnemy = 0;
+        int numOfUs = 0;
+
+        for (RobotInfo rInfo: nearbyRobots) {
+            if (rInfo.team == opponent) {
+                numOfEnemy++;
+            } else {
+                numOfUs++;
+            }
+        }
+        return numOfEnemy > (numOfUs / 3);
+    }
+
     static WarPhase updateWarPhase() {
         for (MapLocation location: enlightenmentCenters.keySet()) {
             if (enlightenmentCenters.get(location) == Team.NEUTRAL) {
@@ -59,7 +81,7 @@ public class EnlightenmentCenter extends RobotPlayer{
             return WarPhase.SEARCH;
         }
 
-        if (rc.getConviction() < 50 || survivalRate() < 0.1) {
+        if ((rc.getConviction() < 20 || survivalRate() < 0.1) && surroundedByEnemy()) {
             //TODO: make smarter thresholds
             return WarPhase.DEFEND;
         }
@@ -119,17 +141,34 @@ public class EnlightenmentCenter extends RobotPlayer{
     static RobotType determineRobotType() {
         switch (warPhase) {
             case SEARCH:
-                return randomRobotType(0.3,0.3,0.4);
+                return getToBuild(robotRatio[0]);
+//                return randomRobotType(0.3,0.3,0.4);
             case CONQUER:
-                return randomRobotType(0.7,0.2,0.1);
+                return getToBuild(robotRatio[1]);
+//                return randomRobotType(0.7,0.2,0.1);
             case ATTACK:
-                return randomRobotType(0.4,0.2,0.4);
+                return getToBuild(robotRatio[2]);
+//                return randomRobotType(0.5,0.2,0.3);
             case DEFEND:
-                return randomRobotType(0.5,0.5,0);
+                return getToBuild(robotRatio[3]);
+//                return randomRobotType(0.5,0.5,0);
             default:
                 return randomRobotType(0.33,0.33,0.33);
         }
     }
+
+    static RobotType getToBuild(double[] referenceRatios) {
+        double numOfRobotAlive = robotAlive.size();
+        double politicianOff = referenceRatios[0] - robotTypeCount.get(RobotType.POLITICIAN) / numOfRobotAlive;
+        double slandererOff = referenceRatios[1] - robotTypeCount.get(RobotType.SLANDERER) / numOfRobotAlive;
+        double muckrackerOff = referenceRatios[2] - robotTypeCount.get(RobotType.MUCKRAKER) / numOfRobotAlive;
+
+        if (politicianOff > slandererOff && politicianOff > muckrackerOff) return RobotType.POLITICIAN;
+        if (slandererOff > muckrackerOff) return RobotType.SLANDERER;
+        return RobotType.MUCKRAKER;
+
+    }
+
 
     static RobotType randomRobotType(double politicianPercent, double slandererPercent, double muckrakerPercent) {
         double randomNum = Math.random();
@@ -144,8 +183,37 @@ public class EnlightenmentCenter extends RobotPlayer{
     }
 
     static void buildRobot() throws GameActionException {
-        // TODO: change the hardcoded influence.
-        int influence = 50;
+        int influence = 0;
+        int motherInfluence = rc.getInfluence();
+        RobotType rType = rc.getType();
+        switch (warPhase){
+            case SEARCH:
+                if (rType == RobotType.SLANDERER){
+                    influence =  (motherInfluence * 2) / 3;
+                }
+                else if (rType == RobotType.POLITICIAN){
+                    influence = motherInfluence/3;
+                }
+                else {
+                    influence = 1;
+                }
+                break;
+            case CONQUER:
+            case ATTACK:
+            case DEFEND:
+                if (rType == RobotType.SLANDERER){
+                    influence =  (motherInfluence * 2) / 3;
+                }
+                else if (rType == RobotType.POLITICIAN){
+                    influence = motherInfluence/3;
+                }
+                else {
+                    influence = 10;
+                }
+                break;
+        }
+
+        influence = Math.min(influence, motherInfluence - 22);
         RobotType toBuild = determineRobotType();
 
         for (int i = 0; i < directions.length; i++) {
@@ -160,23 +228,25 @@ public class EnlightenmentCenter extends RobotPlayer{
                     directionIndex = (directionIndex + 1) % directions.length;
                 }
                 rc.buildRobot(toBuild, dir, influence);
-                updateChildRobotIds(dir);
+                updateChildRobotInfo(dir);
                 numOfRobotBuilt++;
+                int newNum = robotTypeCount.get(toBuild) + 1;
+                robotTypeCount.put(toBuild, newNum);
             } else {
                 break;
             }
         }
     }
 
-    static void updateChildRobotIds(Direction dir) throws GameActionException {
+    static void updateChildRobotInfo(Direction dir) throws GameActionException {
         MapLocation robotLocation = rc.adjacentLocation(dir);
         RobotInfo robotInfo = rc.senseRobotAtLocation(robotLocation);
-        childRobotIds.add(robotInfo.ID);
+        robotAlive.put(robotInfo.ID, robotInfo);
     }
 
     static void listenToChildRobots() throws GameActionException {
         List<Integer> removeList = new ArrayList<>();
-        for (int robotID: childRobotIds) {
+        for (int robotID: robotAlive.keySet()) {
             if (rc.canGetFlag(robotID)) {
                 int robotFlag = rc.getFlag(robotID);
                 Message msg = FlagProtocol.decode(robotFlag);
@@ -187,9 +257,9 @@ public class EnlightenmentCenter extends RobotPlayer{
                             enlightenmentCenters.put(msgLocation,msg.team);
                             break;
                             //TODO: figure out how to react
-                        case SCOUTDANGER:
                         case WALL:
                         case CORNER:
+
                             break;
                     }
                 }
@@ -199,10 +269,16 @@ public class EnlightenmentCenter extends RobotPlayer{
         }
 
         for (int removeID: removeList) {
-            childRobotIds.remove(new Integer(removeID));
+            RobotType robotType = robotAlive.get(removeID).type;
+            int newNum = robotTypeCount.get(robotType) - 1;
+            robotTypeCount.put(robotType, newNum);
+            robotAlive.remove(new Integer(removeID));
+
         }
 
         numOfRobotDied += removeList.size();
         System.out.println("Finished listening to all children at round number: "+turnCount);
     }
+
+
 }
