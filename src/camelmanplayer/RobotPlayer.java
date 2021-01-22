@@ -4,6 +4,13 @@ import battlecode.common.*;
 
 import java.util.*;
 
+// TODO:
+// 1) Slanderer diagonol positioning
+// 2) Muckracker 8 searchers + no zigzag for remaining searches
+// 3) Politician Swarm attack
+// 4) elegant bidding solution --> a) scale according to the mother enlightenment center b) other options...
+
+
 public strictfp class RobotPlayer {
     static RobotController rc;
 
