@@ -35,9 +35,8 @@ public strictfp class RobotPlayer {
     // UPDATED
     enum MessageType{
         ECENTER,
-        SCOUTDANGER,
         WALL,
-        CORNER
+        CORNER,
     }
 
     static final double[][] scanMoveLeftXYRatio = new double[][] {
@@ -154,7 +153,6 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
-    // UPDATED
     static void setMessageFlag(MessageType mType, WarPhase warPhase, Team team, MapLocation currLoc)
     throws GameActionException {
         Message msg = new Message(mType, warPhase, team, currLoc, motherLoc);
@@ -199,17 +197,12 @@ public strictfp class RobotPlayer {
         }
     }
 
-    // UPDATED:
-//    static Direction diverge(int enemyCount, int enemyThreshold) throws GameActionException {
-//        Team team = rc.getTeam();
-//        MapLocation currLoc = rc.getLocation();
-//        if (enemyCount > enemyThreshold) {
-//            System.out.println("I am in danger:O !");
-//            setMessageFlag(MessageType.SCOUTDANGER, WarPhase.SEARCH, team, currLoc);
+//    void tryMoveCorner() {
+//        switch (rc.getType()){
+//            case POLITICIAN:
+
+//
 //        }
-//        // avoid dead-lock regardless of team
-//        Direction randomDir =  randomDirection();
-//        return randomDir;
 //    }
 
     String tryMoveWithCatch(Direction dir) throws Exception {
@@ -220,6 +213,7 @@ public strictfp class RobotPlayer {
 
         Team team = rc.getTeam();
         MapLocation currLoc = rc.getLocation();
+
 
         try {
             rc.move(dir);

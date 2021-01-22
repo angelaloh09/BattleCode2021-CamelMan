@@ -91,8 +91,6 @@ public class FlagProtocol {
     // UPDATED
     static RobotPlayer.MessageType biStringToMessageType(String msgTypeStr) {
         switch (msgTypeStr) {
-            case "01":
-                return RobotPlayer.MessageType.SCOUTDANGER;
             case "10":
                 return RobotPlayer.MessageType.WALL;
             case "11":
@@ -129,7 +127,6 @@ public class FlagProtocol {
     static String msgTypeToBiString(RobotPlayer.MessageType msgType){
         switch (msgType){
             // case ECENTER: return "00";
-            case SCOUTDANGER: return "01";
             case WALL: return "10";
             case CORNER: return "11";
             default: return "00";

@@ -187,9 +187,9 @@ public class EnlightenmentCenter extends RobotPlayer{
                             enlightenmentCenters.put(msgLocation,msg.team);
                             break;
                             //TODO: figure out how to react
-                        case SCOUTDANGER:
                         case WALL:
                         case CORNER:
+
                             break;
                     }
                 }
