@@ -412,7 +412,7 @@ public strictfp class RobotPlayer {
     }
 
     /** scan 1/8 of the map at the start of the game */
-    void scanMap() {
+    void scanMapSlow() {
         // initialize the movement by getting the E-center coordinates
         // main direction of scanning
         Direction direction;
@@ -444,6 +444,27 @@ public strictfp class RobotPlayer {
         } catch (Exception e) {
             System.out.println(e);
         }
+    }
+
+    void scanMapFast() {
+        Direction direction;
+        MapLocation startLoc = rc.getLocation();
+        direction = motherLoc.directionTo(startLoc);
+        // the index of current direction
+        int idx = Arrays.asList(directions).indexOf(direction);
+
+        while (nextPhase == warPhase) {
+            direction = directions[idx];
+            int steps = 0;
+            while (steps < 10) {
+                // TODO: consider tile color
+                // TODO: occupied
+                tryMoveWithCatch(direction);
+                steps ++;
+            }
+            idx = (int) (Math.random() * 2) == 0 ? idx + 1 : idx - 1;
+        }
+
     }
 
     void pUniversalPrinciple() throws GameActionException {
