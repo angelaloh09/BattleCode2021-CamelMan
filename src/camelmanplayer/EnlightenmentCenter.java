@@ -23,6 +23,9 @@ public class EnlightenmentCenter extends RobotPlayer{
 
     EnlightenmentCenter(RobotController rc) {
         this.rc = rc;
+        robotTypeCount.put(RobotType.POLITICIAN, 0);
+        robotTypeCount.put(RobotType.SLANDERER, 0);
+        robotTypeCount.put(RobotType.MUCKRAKER, 0);
         warPhase = WarPhase.SEARCH;
         numOfRobotBuilt = 0;
         numOfRobotDied = 0;
