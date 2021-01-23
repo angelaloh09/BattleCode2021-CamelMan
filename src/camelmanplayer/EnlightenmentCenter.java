@@ -188,36 +188,45 @@ public class EnlightenmentCenter extends RobotPlayer{
     static void buildRobot() throws GameActionException {
         int influence = 0;
         int motherInfluence = rc.getInfluence();
-        RobotType rType = rc.getType();
-        switch (warPhase){
-            case SEARCH:
-                if (rType == RobotType.SLANDERER){
-                    influence =  (motherInfluence * 2) / 3;
-                }
-                else if (rType == RobotType.POLITICIAN){
-                    influence = motherInfluence/3;
-                }
-                else {
-                    influence = 1;
-                }
+        RobotType toBuild = determineRobotType();
+        switch (toBuild) {
+            case POLITICIAN:
+                influence = Math.max(motherInfluence / 3, 30);
                 break;
-            case CONQUER:
-            case ATTACK:
-            case DEFEND:
-                if (rType == RobotType.SLANDERER){
-                    influence =  (motherInfluence * 2) / 3;
-                }
-                else if (rType == RobotType.POLITICIAN){
-                    influence = motherInfluence/3;
-                }
-                else {
-                    influence = 10;
-                }
+            case SLANDERER:
+                influence = Math.max((motherInfluence * 2) / 3, 50);
+                break;
+            case MUCKRAKER:
+                if (warPhase == WarPhase.SEARCH) influence = 1;
+                else influence = 10;
                 break;
         }
-
-        influence = Math.min(influence, motherInfluence - 22);
-        RobotType toBuild = determineRobotType();
+//        switch (warPhase){
+//            case SEARCH:
+//                if (toBuild == RobotType.SLANDERER){
+//                    influence =  (motherInfluence * 2) / 3;
+//                }
+//                else if (toBuild == RobotType.POLITICIAN){
+//                    influence = motherInfluence/3;
+//                }
+//                else {
+//                    influence = 1;
+//                }
+//                break;
+//            case CONQUER:
+//            case ATTACK:
+//            case DEFEND:
+//                if (toBuild == RobotType.SLANDERER){
+//                    influence =  (motherInfluence * 2) / 3;
+//                }
+//                else if (toBuild == RobotType.POLITICIAN){
+//                    influence = motherInfluence/3;
+//                }
+//                else {
+//                    influence = 10;
+//                }
+//                break;
+//        }
 
         for (int i = 0; i < directions.length; i++) {
             Direction dir = directions[(directionIndex+i) % directions.length];
