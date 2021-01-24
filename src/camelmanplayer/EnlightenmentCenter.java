@@ -14,8 +14,8 @@ public class EnlightenmentCenter extends RobotPlayer{
     private static Team opponent;
     private static int directionIndex;
     private static final double[][] robotRatio = {
-            {0.3, 0.3, 0.4},
-            {0.7, 0.2, 0.1},
+            {0.2, 0.5, 0.3},
+            {0.6, 0.3, 0.1},
             {0.5, 0.2, 0.3},
             {0.5, 0.5, 0.0}
     };
@@ -189,32 +189,32 @@ public class EnlightenmentCenter extends RobotPlayer{
         int influence = 0;
         int motherInfluence = rc.getInfluence();
         RobotType rType = rc.getType();
-        switch (warPhase){
-            case SEARCH:
+//        switch (warPhase){
+//            case SEARCH:
                 if (rType == RobotType.SLANDERER){
                     influence =  (motherInfluence * 2) / 3;
                 }
                 else if (rType == RobotType.POLITICIAN){
-                    influence = motherInfluence/3;
+                    influence = motherInfluence/4;
                 }
                 else {
                     influence = 1;
                 }
-                break;
-            case CONQUER:
-            case ATTACK:
-            case DEFEND:
-                if (rType == RobotType.SLANDERER){
-                    influence =  (motherInfluence * 2) / 3;
-                }
-                else if (rType == RobotType.POLITICIAN){
-                    influence = motherInfluence/3;
-                }
-                else {
-                    influence = 10;
-                }
-                break;
-        }
+//                break;
+//            case CONQUER:
+//            case ATTACK:
+//            case DEFEND:
+//                if (rType == RobotType.SLANDERER){
+//                    influence =  (motherInfluence * 2) / 3;
+//                }
+//                else if (rType == RobotType.POLITICIAN){
+//                    influence = motherInfluence/3;
+//                }
+//                else {
+//                    influence = 10;
+//                }
+//                break;
+//        }
 
         influence = Math.min(influence, motherInfluence - 22);
         RobotType toBuild = determineRobotType();

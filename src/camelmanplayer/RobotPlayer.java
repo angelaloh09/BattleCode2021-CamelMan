@@ -5,9 +5,9 @@ import battlecode.common.*;
 import java.util.*;
 
 // TODO:
-// 1) Slanderer diagonol positioning
-// 2) Muckracker 8 searchers + no zigzag for remaining searches
-// 3) Politician Swarm attack
+// 1) Slanderer diagonol positioning: SMART RUYU
+// 2) Muckracker 8 searchers + no zigzag for remaining searches: BECKY
+// 3) Politician Swarm attack: ANGELA
 // 4) elegant bidding solution --> a) scale according to the mother enlightenment center b) other options...
 
 
@@ -205,76 +205,76 @@ public strictfp class RobotPlayer {
         }
     }
 
-//    void tryMoveCorner() {
-//        switch (rc.getType()){
-//            case POLITICIAN:
+    /** whenever a robot is moved, call this function */
+    void terminateRound() throws GameActionException {
+        getFlagFromMom();
+        turnCount += 1;
+        Clock.yield();
+    }
 
-//
-//        }
-//    }
-
-    String tryMoveWithCatch(Direction dir) throws Exception {
+    boolean tryMoveWithCatch(Direction dir) throws Exception {
         applyUP();
         // for each step, scan the surrounding first
         // TODO: make sure this function is called every round
         senseNewEC();
 
-        Team team = rc.getTeam();
-        MapLocation currLoc = rc.getLocation();
-
+//        Team team = rc.getTeam();
+//        MapLocation currLoc = rc.getLocation();
 
         try {
             rc.move(dir);
             // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-            getFlagFromMom();
-            turnCount += 1;
-            Clock.yield();
-            return "moved";
+            return true;
         } catch (GameActionException cannotMove) {
             System.out.println("oops, cannot move");
+            if (rc.getCooldownTurns() >= 1) {
+                System.out.println("cool down turns");
+                return true;
+            }
+            return false;
 
-            MapLocation adjacentLoc = rc.adjacentLocation(dir);
-
-            // check if at least 5 of the adjacent nodes are not on the map
-            boolean corner = false;
-            int boundCounter = 0;
-            for (Direction direction: directions){
-                if (!rc.onTheMap(rc.adjacentLocation(direction))){
-                    boundCounter ++;
-                }
-                if (boundCounter == 5){
-                    corner = true;
-                }
-            }
-            // case 1: Scout in corner
-            if (corner){
-                setMessageFlag(MessageType.CORNER, WarPhase.SEARCH, team, currLoc);
-                Direction random_dir = directions[(int) (directions.length * Math.random())];
-                tryMoveWithCatch(random_dir);
-            }
-            // case 2: Scout bumps into wall
-            else if (!rc.onTheMap(adjacentLoc)) {
-                System.out.println("oops, just bumped into the wall");
-                setMessageFlag(MessageType.WALL, WarPhase.SEARCH, team, currLoc);
-                Direction random_dir = directions[(int) (directions.length * Math.random())];
-                tryMoveWithCatch(random_dir);
-            }
-            // case 3: location is occupied
-            else if (rc.isLocationOccupied(adjacentLoc)) {
-                System.out.println("the adjacent location is occupied ;-;");
-                String msg = "";
-                while (msg != "moved") {
-                    Direction random_dir = directions[(int) (directions.length * Math.random())];
-                    msg = tryMoveWithCatch(random_dir);
-                }
-                return "didRandomMove";
-            } else {
-                System.out.println("cool-down turns:" + rc.getCooldownTurns());
-            }
-            getFlagFromMom();
-            turnCount += 1;
-            Clock.yield();
-            return "bye path planning";
+//            MapLocation adjacentLoc = rc.adjacentLocation(dir);
+//
+//            // check if at least 5 of the adjacent nodes are not on the map
+//            boolean corner = false;
+//            int boundCounter = 0;
+//            for (Direction direction: directions){
+//                if (!rc.onTheMap(rc.adjacentLocation(direction))){
+//                    boundCounter ++;
+//                }
+//                if (boundCounter == 5){
+//                    corner = true;
+//                }
+//            }
+//            // case 1: Scout in corner
+//            if (corner){
+//                setMessageFlag(MessageType.CORNER, WarPhase.SEARCH, team, currLoc);
+//                Direction random_dir = directions[(int) (directions.length * Math.random())];
+//                tryMoveWithCatch(random_dir);
+//            }
+//            // case 2: Scout bumps into wall
+//            else if (!rc.onTheMap(adjacentLoc)) {
+//                System.out.println("oops, just bumped into the wall");
+//                setMessageFlag(MessageType.WALL, WarPhase.SEARCH, team, currLoc);
+//                Direction random_dir = directions[(int) (directions.length * Math.random())];
+//                tryMoveWithCatch(random_dir);
+//            }
+//            // case 3: location is occupied
+//            else if (rc.isLocationOccupied(adjacentLoc)) {
+//                System.out.println("the adjacent location is occupied ;-;");
+//                String msg = "";
+//                while (msg != "moved") {
+//                    Direction random_dir = directions[(int) (directions.length * Math.random())];
+//                    msg = tryMoveWithCatch(random_dir);
+//                }
+//                return "didRandomMove";
+//            } else {
+//                System.out.println("cool-down turns:" + rc.getCooldownTurns());
+//            }
+//            getFlagFromMom();
+//            turnCount += 1;
+//            Clock.yield();
+//            return "bye path planning";
         }
     }
 
@@ -302,15 +302,15 @@ public strictfp class RobotPlayer {
 //        }
 //    }
 
-    void moveToDestination (MapLocation destination, int squaredDis) throws GameActionException {
+    void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
         int count = 0;
         System.out.println("I am going to: "+destination);
         while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
             applyUP();
             senseNewEC();
-            getFlagFromMom();
+//            getFlagFromMom();
             Direction dir = rc.getLocation().directionTo(destination);
-            if (!tryMove(dir)) {
+            if (!tryMoveWithCatch(dir)) {
                 count++;
             }
             if (count > 5) {
@@ -318,6 +318,7 @@ public strictfp class RobotPlayer {
                 count = 0;
             }
             if (nextPhase != warPhase) return;
+            terminateRound();
         }
         System.out.println("I arrived at: "+destination);
     }
@@ -430,7 +431,8 @@ public strictfp class RobotPlayer {
             // first move one step forward in this direction
             int movedSteps = 0;
             while (movedSteps < 3) {
-                if (tryMoveWithCatch(direction).equals("moved")) movedSteps++;
+//                if (tryMoveWithCatch(direction).equals("moved")) movedSteps++;
+                if (tryMoveWithCatch(direction)) movedSteps++;
                 System.out.println("I am in the while loop QWQ");
                 System.out.println("moveSteps: "+movedSteps);
                 if (nextPhase != warPhase) return;
@@ -453,23 +455,56 @@ public strictfp class RobotPlayer {
         }
     }
 
-    void scanMapFast() {
-        Direction direction;
-        MapLocation startLoc = rc.getLocation();
-        direction = motherLoc.directionTo(startLoc);
-        // the index of current direction
-        int idx = Arrays.asList(directions).indexOf(direction);
+    Direction newDirection() throws Exception {
+        System.out.println("in new direction");
+        System.out.println(rc.getCooldownTurns());
+        while (rc.getCooldownTurns() >= 1) {
+            terminateRound();
+        }
+        System.out.println(rc.getCooldownTurns());
 
-        while (nextPhase == warPhase) {
-            direction = directions[idx];
-            int steps = 0;
-            while (steps < 10) {
-                // TODO: consider tile color
-                // TODO: occupied
-                tryMoveWithCatch(direction);
-                steps ++;
+        // TODO: no new direction bc all neighbors are occupied
+
+        ArrayList<Direction> moveable = new ArrayList<>();
+        for (Direction dir : directions) {
+            if (rc.canMove(dir)) moveable.add(dir);
+        }
+        int numCanMove = moveable.size();
+        System.out.println(numCanMove);
+        numCanMove = numCanMove - 1 < 0 ? numCanMove : numCanMove - 1;
+        int dirIdx = (int) ((numCanMove - 1) * Math.random());
+        System.out.println("new dir" + dirIdx);
+        return moveable.get(dirIdx);
+
+    }
+
+    void scanMapFast() {
+
+        try {
+            Direction direction;
+            MapLocation startLoc = rc.getLocation();
+            direction = motherLoc.directionTo(startLoc);
+
+            while (nextPhase == warPhase) {
+                int steps = 0;
+                // at most move 10 steps in one direction
+                while (steps < 10) {
+                    // TODO: consider tile color
+                    boolean moved = tryMoveWithCatch(direction);
+                    // if moved successfully, keep going
+                    // if something is blocking the way (wall/robot), change direction
+                    if (moved) {
+                        System.out.println("moved, step++");
+                        steps++;
+                        terminateRound();
+                    }
+                    else steps = 10;
+
+                }
+                direction = newDirection();
             }
-            idx = (int) (Math.random() * 2) == 0 ? idx + 1 : idx - 1;
+        } catch (Exception e) {
+            System.out.println(e);
         }
 
     }
@@ -502,16 +537,11 @@ public strictfp class RobotPlayer {
         }
     }
 
-    // TODO: add a while loop to try all 8 directions
-    void randomMovement() throws GameActionException {
+    void randomMovement() throws Exception {
         System.out.println("doing random movement");
-        if (tryMove(randomDirection())) {
-            turnCount += 1;
-        } else {
-            // if it cannot move in this direction, try to move in another random direction
-        }
-        getFlagFromMom();
-        Clock.yield();
+        Direction dir = newDirection();
+        tryMoveWithCatch(dir);
+        terminateRound();
     }
 
     // For Politician bot to move to ECenter
@@ -522,9 +552,8 @@ public strictfp class RobotPlayer {
 
         if (rc.canEmpower(actionRS)) {
             // empower and die gloriously
-            turnCount += 1;
             rc.empower(actionRS);
-            Clock.yield();
+            terminateRound();
         } else {
             // move randomly like a soldier who doesn't know the meaning of his life
             randomMovement();
