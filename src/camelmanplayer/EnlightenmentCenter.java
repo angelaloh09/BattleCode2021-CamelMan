@@ -294,7 +294,7 @@ public class EnlightenmentCenter extends RobotPlayer{
         System.out.println("Finished listening to all children at round number: "+turnCount);
     }
 
-    void swarmAttack() throws GameActionException{
+    void swarmAttack() throws Exception{
         int numDefenders = 0;
         int numOpponents = 0;
         if (rc.getLocation() == motherLoc) {
@@ -303,7 +303,6 @@ public class EnlightenmentCenter extends RobotPlayer{
                 if (rInfo.team != opponent) {
                     numDefenders++;
 
-<<<<<<< HEAD
                 }
                 else numOpponents ++;
             }
@@ -321,6 +320,4 @@ public class EnlightenmentCenter extends RobotPlayer{
             }
         }
     }
-=======
-}
->>>>>>> b4335ffab969a7a407128624c09c7abac36730ca
+
