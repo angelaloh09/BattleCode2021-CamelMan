@@ -461,20 +461,45 @@ public strictfp class RobotPlayer {
             terminateRound();
         }
 
-        ArrayList<Direction> moveable = new ArrayList<>();
-        for (Direction dir : directions) {
-            if (rc.canMove(dir)) moveable.add(dir);
+        // put all the passability of next two
+        // tiles in all moveable direction in an array
+        ArrayList<Double> moveable = new ArrayList<>();
+        for (int i = 0; i < directions.length; i ++) {
+            Direction dir = directions[i];
+            if (rc.canMove(dir)) {
+                MapLocation adjacent1 = rc.adjacentLocation(dir);
+                MapLocation adjacent2 = adjacent1.add(dir);
+                double passability1 = rc.sensePassability(adjacent1);
+                double passability2 = 0.0;
+                if (rc.onTheMap(adjacent2)) {
+                    passability2 = rc.sensePassability(adjacent2);
+                }
+                double nextTwoPass = passability1 + passability2;
+                moveable.add(nextTwoPass);
+            }
         }
 
         // if all neighbors are occupied stay still
-        while (moveable.isEmpty()) terminateRound();
+        while (moveable.size() == 0) terminateRound();
 
-        int numCanMove = moveable.size();
-        System.out.println(numCanMove);
-        numCanMove = numCanMove - 1 < 0 ? numCanMove : numCanMove - 1;
-        int dirIdx = (int) ((numCanMove - 1) * Math.random());
-        System.out.println("new dir" + dirIdx);
-        return moveable.get(dirIdx);
+        // create an array of directions that have the biggest passability
+        ArrayList<Direction> bestDirs = new ArrayList<>();
+        double maxPass = -1.0;
+        for (int i = 0; i < moveable.size(); i ++) {
+            if (moveable.get(i) > maxPass) {
+                maxPass = moveable.get(i);
+                bestDirs = new ArrayList<>();
+                bestDirs.add(directions[i]);
+            }
+            if (moveable.get(i) == maxPass) bestDirs.add(directions[i]);
+        }
+
+        // randomly generate one direction among bestDirs
+        int numBestDir = bestDirs.size();
+        System.out.println("numbestdir" + numBestDir);
+        int dirIdx = (int) Math.floor(numBestDir * Math.random());
+        System.out.println("next index" + dirIdx);
+        return bestDirs.get(dirIdx);
 
     }
 
