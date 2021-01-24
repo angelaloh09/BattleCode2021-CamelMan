@@ -456,19 +456,19 @@ public strictfp class RobotPlayer {
     }
 
     Direction newDirection() throws Exception {
-        System.out.println("in new direction");
-        System.out.println(rc.getCooldownTurns());
+        // if in cool down, stay still
         while (rc.getCooldownTurns() >= 1) {
             terminateRound();
         }
-        System.out.println(rc.getCooldownTurns());
-
-        // TODO: no new direction bc all neighbors are occupied
 
         ArrayList<Direction> moveable = new ArrayList<>();
         for (Direction dir : directions) {
             if (rc.canMove(dir)) moveable.add(dir);
         }
+
+        // if all neighbors are occupied stay still
+        while (moveable.isEmpty()) terminateRound();
+
         int numCanMove = moveable.size();
         System.out.println(numCanMove);
         numCanMove = numCanMove - 1 < 0 ? numCanMove : numCanMove - 1;
