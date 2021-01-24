@@ -2,6 +2,8 @@ package camelmanplayer;
 
 import java.util.*;
 import battlecode.common.*;
+import java.lang.reflect.Array;
+
 
 public class EnlightenmentCenter extends RobotPlayer{
 
@@ -103,22 +105,22 @@ public class EnlightenmentCenter extends RobotPlayer{
         switch (warPhase) {
             case SEARCH:
                 System.out.println("Time to Search!");
-                msgToSend = new Message(MessageType.ECENTER, WarPhase.SEARCH, rc.getTeam()); break;
+                msgToSend = new Message(MessageType.ECENTERTOCHILD, WarPhase.SEARCH, rc.getTeam()); break;
             case CONQUER:
                 MapLocation neutralLocation = getClosestEnlightmentCenter(Team.NEUTRAL);
                 if (neutralLocation != null) {
-                    msgToSend = new Message(MessageType.ECENTER, WarPhase.CONQUER, Team.NEUTRAL, neutralLocation, rc.getLocation());
+                    msgToSend = new Message(MessageType.ECENTERTOCHILD, WarPhase.CONQUER, Team.NEUTRAL, neutralLocation, rc.getLocation());
                     System.out.println("Time to Conquer "+neutralLocation);
                 }
                 break;
             case ATTACK:
                 System.out.println("Time to Attack!");
                 MapLocation enemyLocation = getClosestEnlightmentCenter(opponent);
-                msgToSend = new Message(MessageType.ECENTER, WarPhase.ATTACK, opponent, enemyLocation, rc.getLocation());
+                msgToSend = new Message(MessageType.ECENTERTOCHILD, WarPhase.ATTACK, opponent, enemyLocation, rc.getLocation());
                 break;
             case DEFEND:
                 System.out.println("Time to Defend!");
-                msgToSend = new Message(MessageType.ECENTER, WarPhase.DEFEND, rc.getTeam());
+                msgToSend = new Message(MessageType.ECENTERTOCHILD, WarPhase.DEFEND, rc.getTeam());
                 break;
         }
         int newFlag = FlagProtocol.encode(msgToSend);
@@ -255,7 +257,7 @@ public class EnlightenmentCenter extends RobotPlayer{
                 Message msg = FlagProtocol.decode(robotFlag);
                 if (msg != null) {
                     switch (msg.msgType) {
-                        case ECENTER:
+                        case ECENTERTOCHILD:
                             MapLocation msgLocation = msg.getMapLocation(rc.getLocation());
                             enlightenmentCenters.put(msgLocation,msg.team);
                             break;
@@ -283,5 +285,29 @@ public class EnlightenmentCenter extends RobotPlayer{
         System.out.println("Finished listening to all children at round number: "+turnCount);
     }
 
+    void swarmAttack() throws GameActionException{
+        int numDefenders = 0;
+        int numOpponents = 0;
+        if (rc.getLocation() == motherLoc) {
+            RobotInfo[] robotsNearMother = rc.senseNearbyRobots();
+            for (RobotInfo rInfo : robotsNearMother) {
+                if (rInfo.team != opponent) {
+                    numDefenders++;
 
-}
+                }
+                else numOpponents ++;
+            }
+        }
+        // TODO: change hard-coded number
+        MapLocation opponentECenter = getClosestEnlightmentCenter(opponent);
+        if ((numDefenders > 5 * numOpponents) && (numDefenders > 15) && (opponentECenter!= null)
+        && rc.getRoundNum() > 1000 ){
+            // mother communicate with the other e-center's to check their conviction level (?)
+            // then use a portion of the bots and attack together
+            if (rc.getType() == RobotType.POLITICIAN || rc.getType() == RobotType.MUCKRAKER){
+                int actionRS = rc.getType().actionRadiusSquared;
+                moveToDestination(opponentECenter, actionRS);
+                }
+            }
+        }
+    }

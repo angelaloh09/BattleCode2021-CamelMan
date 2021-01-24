@@ -41,9 +41,11 @@ public strictfp class RobotPlayer {
 
     // UPDATED
     enum MessageType{
-        ECENTER,
+        ECENTERTOCHILD,
+        ECENTERTOECENTER,
         WALL,
         CORNER,
+
     }
 
     static final double[][] scanMoveLeftXYRatio = new double[][] {
@@ -194,7 +196,7 @@ public strictfp class RobotPlayer {
             if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
                 // send the info of this ECenter to mom
                 System.out.println("I found an enlightenment center: "+loc);
-                Message msg = new Message(MessageType.ECENTER, WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
+                Message msg = new Message(MessageType.ECENTERTOCHILD, WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
                 int flag = FlagProtocol.encode(msg);
                 if (rc.canSetFlag(flag)) {
                     System.out.println("I set the flag!");
@@ -508,4 +510,7 @@ public strictfp class RobotPlayer {
             randomMovement();
         }
     }
+
+
+
 }
