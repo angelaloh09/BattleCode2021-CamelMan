@@ -45,7 +45,8 @@ public class Muckraker extends RobotPlayer {
         int actionRS = rc.getType().actionRadiusSquared;
         System.out.println("The target Enlightenment center is"+targetECenter);
         moveToDestination(targetECenter, actionRS);
-        randomMovement();
+        mUniversalPrinciple();
+        parkRobot(targetECenter);
     }
 }
 
