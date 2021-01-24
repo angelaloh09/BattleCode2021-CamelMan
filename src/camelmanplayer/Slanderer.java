@@ -30,7 +30,7 @@ public class Slanderer extends RobotPlayer{
                 switch (warPhase) {
                     case SEARCH:
                         System.out.println("I am scanning!");
-                        scanMap();
+                        scanMapFast();
                         break;
                     case CONQUER:
                         System.out.println("I am conquering!");
@@ -54,21 +54,30 @@ public class Slanderer extends RobotPlayer{
         }
     }
 
+    /**
+     * Main function for moving the slanderer to a parking spot,
+     * i.e. diagonal lines around the e-center
+     */
     private void parkSlanderer() throws GameActionException {
+        // According to the direction that the slanderer was built, get an array of general directions
         MapLocation startLoc = rc.getLocation();
         Direction initDirection = motherLoc.directionTo(startLoc);
         Direction[] generalDirections = getGeneralDirections(initDirection);
 
+        // Pass the 10 frozen round with Clock.yield();
         while (!moveInGeneralDirection(generalDirections)) {
             Clock.yield();
         }
 
         while (true) {
-            //TODO: what if cannot move for a long time?
             try {
+                // Move one step towards the generalDirections
                 moveInGeneralDirection(generalDirections);
 
+                // If the current location is a parking lot, done.
                 if (isParkingLot(rc.getLocation())) return;
+
+                // Try to park to the nearby parking lots
                 if (tryPark(generalDirections)) return;
             } catch (Exception e) {
                 System.out.println(e);
@@ -76,6 +85,11 @@ public class Slanderer extends RobotPlayer{
         }
     }
 
+    /**
+     * Move the robot in the general directions for one step.
+     * Start with a random one in the Array, and loop through all of them.
+     * Return if the move was successful.
+     */
     private boolean moveInGeneralDirection(Direction[] generalDirections) throws GameActionException {
         int offSet = (int) (Math.random() * 4);
 
@@ -90,6 +104,10 @@ public class Slanderer extends RobotPlayer{
         return false;
     }
 
+    /**
+     * Move the robot to an adjacent parking lot in the general directions.
+     * Return if the move was successful.
+     */
     private boolean tryPark(Direction[] generalDirections) throws GameActionException {
         for (Direction dir: generalDirections) {
             MapLocation targetLoc = rc.adjacentLocation(dir);
@@ -105,6 +123,9 @@ public class Slanderer extends RobotPlayer{
         return false;
     }
 
+    /**
+     * Return whether the targetLocation is a parkingLot.
+     */
     private boolean isParkingLot(MapLocation targetLocation) {
 
         // Is it on the diagonal?
@@ -117,6 +138,10 @@ public class Slanderer extends RobotPlayer{
         return true;
     }
 
+    /**
+     * Return an Array of length 4, which is the four direction next to Direction dir.
+     * e.g. if the initial direction is NORTH, general directions will be NORTH, NORTHEAST, EAST, EASTSOUTH.
+     */
     private Direction[] getGeneralDirections(Direction dir) {
         ArrayList<Direction> directionList = new ArrayList<>();
 

@@ -16,8 +16,8 @@ public class EnlightenmentCenter extends RobotPlayer{
     private static Team opponent;
     private static int directionIndex;
     private static final double[][] robotRatio = {
-            {0.3, 0.3, 0.4},
-            {0.7, 0.2, 0.1},
+            {0.2, 0.5, 0.3},
+            {0.6, 0.3, 0.1},
             {0.5, 0.2, 0.3},
             {0.5, 0.5, 0.0}
     };
@@ -193,10 +193,10 @@ public class EnlightenmentCenter extends RobotPlayer{
         RobotType toBuild = determineRobotType();
         switch (toBuild) {
             case POLITICIAN:
-                influence = Math.max(motherInfluence / 3, 30);
+                influence = Math.max(motherInfluence / 3, 50);
                 break;
             case SLANDERER:
-                influence = Math.max((motherInfluence * 2) / 3, 50);
+                influence = Math.max((motherInfluence * 2) / 3, 80);
                 break;
             case MUCKRAKER:
                 if (warPhase == WarPhase.SEARCH) influence = 1;
@@ -303,6 +303,7 @@ public class EnlightenmentCenter extends RobotPlayer{
                 if (rInfo.team != opponent) {
                     numDefenders++;
 
+<<<<<<< HEAD
                 }
                 else numOpponents ++;
             }
@@ -320,3 +321,6 @@ public class EnlightenmentCenter extends RobotPlayer{
             }
         }
     }
+=======
+}
+>>>>>>> b4335ffab969a7a407128624c09c7abac36730ca

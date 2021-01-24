@@ -17,7 +17,7 @@ public class Politician extends RobotPlayer{
             switch (warPhase) {
                 case SEARCH:
                     System.out.println("I am scanning!");
-                    scanMap();
+                    scanMapFast();
                     break;
                 case CONQUER:
                     System.out.println("I am conquering!");
