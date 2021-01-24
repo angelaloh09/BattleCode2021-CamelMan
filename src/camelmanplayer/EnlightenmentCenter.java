@@ -191,10 +191,10 @@ public class EnlightenmentCenter extends RobotPlayer{
         RobotType toBuild = determineRobotType();
         switch (toBuild) {
             case POLITICIAN:
-                influence = Math.max(motherInfluence / 3, 30);
+                influence = Math.max(motherInfluence / 3, 50);
                 break;
             case SLANDERER:
-                influence = Math.max((motherInfluence * 2) / 3, 50);
+                influence = Math.max((motherInfluence * 2) / 3, 80);
                 break;
             case MUCKRAKER:
                 if (warPhase == WarPhase.SEARCH) influence = 1;
