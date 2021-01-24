@@ -188,26 +188,38 @@ public class EnlightenmentCenter extends RobotPlayer{
     static void buildRobot() throws GameActionException {
         int influence = 0;
         int motherInfluence = rc.getInfluence();
-        RobotType rType = rc.getType();
+        RobotType toBuild = determineRobotType();
+        switch (toBuild) {
+            case POLITICIAN:
+                influence = Math.max(motherInfluence / 3, 50);
+                break;
+            case SLANDERER:
+                influence = Math.max((motherInfluence * 2) / 3, 80);
+                break;
+            case MUCKRAKER:
+                if (warPhase == WarPhase.SEARCH) influence = 1;
+                else influence = 10;
+                break;
+        }
 //        switch (warPhase){
 //            case SEARCH:
-                if (rType == RobotType.SLANDERER){
-                    influence =  (motherInfluence * 2) / 3;
-                }
-                else if (rType == RobotType.POLITICIAN){
-                    influence = motherInfluence/4;
-                }
-                else {
-                    influence = 1;
-                }
+//                if (toBuild == RobotType.SLANDERER){
+//                    influence =  (motherInfluence * 2) / 3;
+//                }
+//                else if (toBuild == RobotType.POLITICIAN){
+//                    influence = motherInfluence/3;
+//                }
+//                else {
+//                    influence = 1;
+//                }
 //                break;
 //            case CONQUER:
 //            case ATTACK:
 //            case DEFEND:
-//                if (rType == RobotType.SLANDERER){
+//                if (toBuild == RobotType.SLANDERER){
 //                    influence =  (motherInfluence * 2) / 3;
 //                }
-//                else if (rType == RobotType.POLITICIAN){
+//                else if (toBuild == RobotType.POLITICIAN){
 //                    influence = motherInfluence/3;
 //                }
 //                else {
@@ -215,9 +227,6 @@ public class EnlightenmentCenter extends RobotPlayer{
 //                }
 //                break;
 //        }
-
-        influence = Math.min(influence, motherInfluence - 22);
-        RobotType toBuild = determineRobotType();
 
         for (int i = 0; i < directions.length; i++) {
             Direction dir = directions[(directionIndex+i) % directions.length];
