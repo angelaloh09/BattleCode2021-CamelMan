@@ -11,6 +11,8 @@ public class Muckraker extends RobotPlayer {
 
     void runMuckraker() throws Exception {
 
+        boolean hasParked = false;
+        MapLocation oldTarget = motherLoc;
         // movements by stages
         while (true) {
             warPhase = nextPhase;
@@ -25,7 +27,17 @@ public class Muckraker extends RobotPlayer {
                     System.out.println("I am conquering!");
                     break;
                 case ATTACK:
-                    attackEnemyCenter();
+                    if (hasParked) {
+                        mUniversalPrinciple();
+                        Clock.yield();
+                    } else {
+                        attackEnemyCenter();
+                        hasParked = true;
+                    }
+                    if (!targetECenter.equals(oldTarget)) {
+                        hasParked = false;
+                        oldTarget = targetECenter;
+                    }
                     System.out.println("I am attacking!");
                     break;
                 case DEFEND:
@@ -41,7 +53,7 @@ public class Muckraker extends RobotPlayer {
         }
     }
 
-    void attackEnemyCenter() throws Exception{
+    private void attackEnemyCenter() throws Exception {
         int actionRS = rc.getType().actionRadiusSquared;
         System.out.println("The target Enlightenment center is"+targetECenter);
         moveToDestination(targetECenter, actionRS);

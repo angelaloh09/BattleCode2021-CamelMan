@@ -15,6 +15,7 @@ public class Slanderer extends RobotPlayer {
 
     void runSlanderer() throws Exception {
         boolean stop = false;
+        int politicianTurn = 0;
         while (true) {
             if (rc.getType() == RobotType.SLANDERER) {
                 if (stop) {
@@ -27,30 +28,38 @@ public class Slanderer extends RobotPlayer {
             } else {
                 // Move as a politician
                 warPhase = nextPhase;
-                switch (warPhase) {
-                    case SEARCH:
-                        System.out.println("I am scanning!");
-                        scanMapFast();
-                        break;
-                    case CONQUER:
-                        System.out.println("I am conquering!");
-                        movePoliticianToECenter();
-                        break;
-                    case ATTACK:
-                        System.out.println("I am attacking!");
-                        movePoliticianToECenter();
-                        break;
-                    case DEFEND:
-                        System.out.println("I am defending!");
-                        movePoliticianToECenter();
-                        break;
-                    default:
-                        System.out.println("I am moving randomly!");
-                        getFlagFromMom();
-                        randomMovement();
-                        break;
+
+                if (politicianTurn < 60) {
+                    randomMoveAroundMother();
+                    pUniversalPrinciple();
+                    politicianTurn++;
+                } else {
+                    switch (warPhase) {
+                        case SEARCH:
+                            System.out.println("I am scanning!");
+                            scanMapFast();
+                            break;
+                        case CONQUER:
+                            System.out.println("I am conquering!");
+                            movePoliticianToECenter();
+                            break;
+                        case ATTACK:
+                            System.out.println("I am attacking!");
+                            movePoliticianToECenter();
+                            break;
+                        case DEFEND:
+                            System.out.println("I am defending!");
+                            movePoliticianToECenter();
+                            break;
+                        default:
+                            System.out.println("I am moving randomly!");
+                            getFlagFromMom();
+                            randomMovement();
+                            break;
+                    }
                 }
             }
         }
     }
+
 }

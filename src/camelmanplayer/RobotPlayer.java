@@ -2,6 +2,7 @@ package camelmanplayer;
 
 import battlecode.common.*;
 
+import javax.naming.directory.DirContext;
 import java.util.*;
 
 // TODO:
@@ -595,7 +596,12 @@ public strictfp class RobotPlayer {
         // According to the direction that the slanderer was built, get an array of general directions
 
         MapLocation robotLoc = rc.getLocation();
-        Direction initDirection = eCenterLoc.directionTo(robotLoc);
+        Direction initDirection;
+        if (rc.getType() == RobotType.SLANDERER) {
+            initDirection = eCenterLoc.directionTo(robotLoc);
+        } else {
+            initDirection = robotLoc.directionTo(eCenterLoc);
+        }
         Direction[] generalDirections = getGeneralDirections(initDirection);
 
         // Pass the 10 frozen round with Clock.yield();
@@ -605,6 +611,7 @@ public strictfp class RobotPlayer {
 
         while (true) {
             try {
+                System.out.println("I'm trying to park");
                 // Move one step towards the generalDirections
                 moveInGeneralDirection(generalDirections);
 
@@ -612,7 +619,7 @@ public strictfp class RobotPlayer {
                 if (isParkingLot(rc.getLocation(), eCenterLoc)) return;
 
                 // Try to park to the nearby parking lots
-                if (tryPark(generalDirections)) return;
+                if (tryPark(generalDirections, eCenterLoc)) return;
             } catch (Exception e) {
                 System.out.println(e);
             }
@@ -642,10 +649,10 @@ public strictfp class RobotPlayer {
      * Move the robot to an adjacent parking lot in the general directions.
      * Return if the move was successful.
      */
-    private boolean tryPark(Direction[] generalDirections) throws GameActionException {
+    private boolean tryPark(Direction[] generalDirections, MapLocation eCenterLoc) throws GameActionException {
         for (Direction dir: generalDirections) {
             MapLocation targetLoc = rc.adjacentLocation(dir);
-            if (isParkingLot(targetLoc, motherLoc)) {
+            if (isParkingLot(targetLoc, eCenterLoc)) {
                 if (rc.canMove(dir)) {
                     System.out.println("I am heading "+dir+" to "+targetLoc);
                     rc.move(dir);
@@ -667,7 +674,7 @@ public strictfp class RobotPlayer {
         if (diff % 2 != 0) return false;
 
         // Is it too close to the E-center?
-        if (targetLocation.isWithinDistanceSquared(motherLoc, 2)) return false;
+        if (targetLocation.isWithinDistanceSquared(eCenterLoc, 2)) return false;
         System.out.println(targetLocation+" is a parking lot");
         return true;
     }
@@ -690,6 +697,25 @@ public strictfp class RobotPlayer {
         generalDirectionList.toArray(generalDirectionArray);
 
         return generalDirectionArray;
+    }
+
+    void randomMoveAroundMother() throws Exception {
+        boolean moved = false;
+        while (!moved) {
+            Direction dir = randomDirection();
+            MapLocation nextLoc = rc.adjacentLocation(dir);
+            int distanceSquaredToMom = rc.getLocation().distanceSquaredTo(motherLoc);
+            if (!nextLoc.isWithinDistanceSquared(motherLoc, 20)
+                    && nextLoc.isWithinDistanceSquared(motherLoc, 40)){
+                moved = tryMove(dir);
+            } else if (distanceSquaredToMom > 40) {
+                moveToDestination(motherLoc, 30);
+            } else if (distanceSquaredToMom < 20) {
+                Direction oppoDir = motherLoc.directionTo(rc.getLocation());
+                Direction[] generalOppoDir = getGeneralDirections(oppoDir);
+                moveInGeneralDirection(generalOppoDir);
+            }
+        }
     }
 }
 

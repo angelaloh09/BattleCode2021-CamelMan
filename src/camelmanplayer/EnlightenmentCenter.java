@@ -45,6 +45,7 @@ public class EnlightenmentCenter extends RobotPlayer{
             listenToChildRobots();
             randomBid();
             System.out.println(enlightenmentCenters.size());
+            turnCount++;
             Clock.yield();
         }
     }
@@ -76,10 +77,16 @@ public class EnlightenmentCenter extends RobotPlayer{
     }
 
     static WarPhase updateWarPhase() {
+        MapLocation closestEnemy = getClosestEnlightmentCenter(opponent);
+
         for (MapLocation location: enlightenmentCenters.keySet()) {
             if (enlightenmentCenters.get(location) == Team.NEUTRAL) {
                 return WarPhase.CONQUER;
             }
+        }
+
+        if (closestEnemy != null && rc.getLocation().isWithinDistanceSquared(closestEnemy, 60)) {
+            return WarPhase.ATTACK;
         }
 
         if (enlightenmentCenters.size() <= 2 && rc.getRoundNum() < 1000) {

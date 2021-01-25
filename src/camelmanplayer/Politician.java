@@ -16,8 +16,15 @@ public class Politician extends RobotPlayer{
             warPhase = nextPhase;
             switch (warPhase) {
                 case SEARCH:
-                    System.out.println("I am scanning!");
-                    scanMapFast();
+                    System.out.println("I am at turn number: "+turnCount);
+                    if (turnCount < 60) {
+                        randomMoveAroundMother();
+                        pUniversalPrinciple();
+                        turnCount++;
+                    } else {
+                        System.out.println("I am scanning!");
+                        scanMapFast();
+                    }
                     break;
                 case CONQUER:
                     System.out.println("I am conquering!");
