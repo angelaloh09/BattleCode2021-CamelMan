@@ -1,8 +1,8 @@
-package camelmanplayer;
+package camelmanplayer_old;
 
 import battlecode.common.*;
 
-public class Politician extends RobotPlayer{
+public class Politician extends RobotPlayer {
 
     Politician(RobotController rc) {
         this.rc = rc;
@@ -11,28 +11,13 @@ public class Politician extends RobotPlayer{
 
     void runPolitician() throws Exception {
 
-        if (motherLoc == null) {
-            while (true) {
-                Direction dir = randomDirection();
-                tryMove(dir);
-                pUniversalPrinciple();
-            }
-        }
-
         // movements by stages
         while (true) {
             warPhase = nextPhase;
             switch (warPhase) {
                 case SEARCH:
-                    System.out.println("I am at turn number: "+turnCount);
-                    if (turnCount < 40) {
-                        randomMoveAroundMother();
-                        pUniversalPrinciple();
-                        turnCount++;
-                    } else {
-                        System.out.println("I am scanning!");
-                        scanMapFast();
-                    }
+                    System.out.println("I am scanning!");
+                    scanMap();
                     break;
                 case CONQUER:
                     System.out.println("I am conquering!");

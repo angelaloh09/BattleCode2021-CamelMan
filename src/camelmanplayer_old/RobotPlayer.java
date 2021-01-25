@@ -1,14 +1,13 @@
-package camelmanplayer;
+package camelmanplayer_old;
 
 import battlecode.common.*;
 
-import javax.naming.directory.DirContext;
 import java.util.*;
 
 // TODO:
-// 1) Slanderer diagonol positioning: SMART RUYU
-// 2) Muckracker 8 searchers + no zigzag for remaining searches: BECKY
-// 3) Politician Swarm attack: ANGELA
+// 1) Slanderer diagonol positioning
+// 2) Muckracker 8 searchers + no zigzag for remaining searches
+// 3) Politician Swarm attack
 // 4) elegant bidding solution --> a) scale according to the mother enlightenment center b) other options...
 
 
@@ -42,11 +41,9 @@ public strictfp class RobotPlayer {
 
     // UPDATED
     enum MessageType{
-        ECENTERTOCHILD,
-        ECENTERTOECENTER,
+        ECENTER,
         WALL,
         CORNER,
-
     }
 
     static final double[][] scanMoveLeftXYRatio = new double[][] {
@@ -81,7 +78,6 @@ public strictfp class RobotPlayer {
 
     static WarPhase warPhase;
 
-    // TODO: figure out how to prioritize each ECenter
     static HashMap<MapLocation, Team> enlightenmentCenters = new HashMap<>();
 
     static MapLocation targetECenter;
@@ -177,7 +173,9 @@ public strictfp class RobotPlayer {
     void applyUP() throws GameActionException {
         switch (rc.getType()) {
             case POLITICIAN:
-                pUniversalPrinciple();
+                if (warPhase != WarPhase.SEARCH) {
+                    pUniversalPrinciple();
+                }
                 break;
             case MUCKRAKER:
                 mUniversalPrinciple();
@@ -196,7 +194,7 @@ public strictfp class RobotPlayer {
             if (!loc.equals(motherLoc) && type == RobotType.ENLIGHTENMENT_CENTER) {
                 // send the info of this ECenter to mom
                 System.out.println("I found an enlightenment center: "+loc);
-                Message msg = new Message(MessageType.ECENTERTOCHILD, WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
+                Message msg = new Message(MessageType.ECENTER, WarPhase.SEARCH, rInfo.getTeam(), rInfo.getLocation(), motherLoc);
                 int flag = FlagProtocol.encode(msg);
                 if (rc.canSetFlag(flag)) {
                     System.out.println("I set the flag!");
@@ -206,76 +204,76 @@ public strictfp class RobotPlayer {
         }
     }
 
-    /** whenever a robot is moved, call this function */
-    void terminateRound() throws GameActionException {
-        applyUP();
-        getFlagFromMom();
-        turnCount += 1;
-        Clock.yield();
-    }
+//    void tryMoveCorner() {
+//        switch (rc.getType()){
+//            case POLITICIAN:
 
-    boolean tryMoveWithCatch(Direction dir) throws Exception {
+//
+//        }
+//    }
+
+    String tryMoveWithCatch(Direction dir) throws Exception {
         applyUP();
         // for each step, scan the surrounding first
+        // TODO: make sure this function is called every round
         senseNewEC();
 
-//        Team team = rc.getTeam();
-//        MapLocation currLoc = rc.getLocation();
+        Team team = rc.getTeam();
+        MapLocation currLoc = rc.getLocation();
+
 
         try {
             rc.move(dir);
             // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
-            return true;
+            getFlagFromMom();
+            turnCount += 1;
+            Clock.yield();
+            return "moved";
         } catch (GameActionException cannotMove) {
             System.out.println("oops, cannot move");
-            if (rc.getCooldownTurns() >= 1) {
-                System.out.println("cool down turns");
-                return true;
-            }
-            return false;
 
-//            MapLocation adjacentLoc = rc.adjacentLocation(dir);
-//
-//            // check if at least 5 of the adjacent nodes are not on the map
-//            boolean corner = false;
-//            int boundCounter = 0;
-//            for (Direction direction: directions){
-//                if (!rc.onTheMap(rc.adjacentLocation(direction))){
-//                    boundCounter ++;
-//                }
-//                if (boundCounter == 5){
-//                    corner = true;
-//                }
-//            }
-//            // case 1: Scout in corner
-//            if (corner){
-//                setMessageFlag(MessageType.CORNER, WarPhase.SEARCH, team, currLoc);
-//                Direction random_dir = directions[(int) (directions.length * Math.random())];
-//                tryMoveWithCatch(random_dir);
-//            }
-//            // case 2: Scout bumps into wall
-//            else if (!rc.onTheMap(adjacentLoc)) {
-//                System.out.println("oops, just bumped into the wall");
-//                setMessageFlag(MessageType.WALL, WarPhase.SEARCH, team, currLoc);
-//                Direction random_dir = directions[(int) (directions.length * Math.random())];
-//                tryMoveWithCatch(random_dir);
-//            }
-//            // case 3: location is occupied
-//            else if (rc.isLocationOccupied(adjacentLoc)) {
-//                System.out.println("the adjacent location is occupied ;-;");
-//                String msg = "";
-//                while (msg != "moved") {
-//                    Direction random_dir = directions[(int) (directions.length * Math.random())];
-//                    msg = tryMoveWithCatch(random_dir);
-//                }
-//                return "didRandomMove";
-//            } else {
-//                System.out.println("cool-down turns:" + rc.getCooldownTurns());
-//            }
-//            getFlagFromMom();
-//            turnCount += 1;
-//            Clock.yield();
-//            return "bye path planning";
+            MapLocation adjacentLoc = rc.adjacentLocation(dir);
+
+            // check if at least 5 of the adjacent nodes are not on the map
+            boolean corner = false;
+            int boundCounter = 0;
+            for (Direction direction: directions){
+                if (!rc.onTheMap(rc.adjacentLocation(direction))){
+                    boundCounter ++;
+                }
+                if (boundCounter == 5){
+                    corner = true;
+                }
+            }
+            // case 1: Scout in corner
+            if (corner){
+                setMessageFlag(MessageType.CORNER, WarPhase.SEARCH, team, currLoc);
+                Direction random_dir = directions[(int) (directions.length * Math.random())];
+                tryMoveWithCatch(random_dir);
+            }
+            // case 2: Scout bumps into wall
+            else if (!rc.onTheMap(adjacentLoc)) {
+                System.out.println("oops, just bumped into the wall");
+                setMessageFlag(MessageType.WALL, WarPhase.SEARCH, team, currLoc);
+                Direction random_dir = directions[(int) (directions.length * Math.random())];
+                tryMoveWithCatch(random_dir);
+            }
+            // case 3: location is occupied
+            else if (rc.isLocationOccupied(adjacentLoc)) {
+                System.out.println("the adjacent location is occupied ;-;");
+                String msg = "";
+                while (msg != "moved") {
+                    Direction random_dir = directions[(int) (directions.length * Math.random())];
+                    msg = tryMoveWithCatch(random_dir);
+                }
+                return "didRandomMove";
+            } else {
+                System.out.println("cool-down turns:" + rc.getCooldownTurns());
+            }
+            getFlagFromMom();
+            turnCount += 1;
+            Clock.yield();
+            return "bye path planning";
         }
     }
 
@@ -303,24 +301,22 @@ public strictfp class RobotPlayer {
 //        }
 //    }
 
-    void moveToDestination (MapLocation destination, int squaredDis) throws Exception {
+    void moveToDestination (MapLocation destination, int squaredDis) throws GameActionException {
         int count = 0;
         System.out.println("I am going to: "+destination);
         while (rc.getLocation().distanceSquaredTo(destination) > squaredDis) {
             applyUP();
             senseNewEC();
-//            getFlagFromMom();
+            getFlagFromMom();
             Direction dir = rc.getLocation().directionTo(destination);
-            if (!tryMoveWithCatch(dir)) {
+            if (!tryMove(dir)) {
                 count++;
             }
             if (count > 5) {
-                Direction[] generalDir = getGeneralDirections(dir);
-                moveInGeneralDirection(generalDir);
+                randomMovement();
                 count = 0;
             }
             if (nextPhase != warPhase) return;
-            terminateRound();
         }
         System.out.println("I arrived at: "+destination);
     }
@@ -375,9 +371,8 @@ public strictfp class RobotPlayer {
     }
 
     void getFlagFromMom() throws GameActionException {
-        if (motherLoc != null) return;
         if (rc.canGetFlag(motherId)) {
-            Message motherMsg = FlagProtocol.decode(rc.getFlag(motherId));
+           Message motherMsg = FlagProtocol.decode(rc.getFlag(motherId));
             if (motherMsg != null) {
                 targetECenter = motherMsg.getMapLocation(motherLoc);
                 nextPhase = motherMsg.warPhase;
@@ -412,7 +407,7 @@ public strictfp class RobotPlayer {
     }
 
     void loadMotherInfo() {
-        RobotInfo[] rinfolst =  rc.senseNearbyRobots(4);
+        RobotInfo[] rinfolst =  rc.senseNearbyRobots(2);
         for (RobotInfo rinfo : rinfolst) {
             if (rinfo.getType() == RobotType.ENLIGHTENMENT_CENTER) {
                 motherLoc = rinfo.getLocation();
@@ -423,7 +418,7 @@ public strictfp class RobotPlayer {
     }
 
     /** scan 1/8 of the map at the start of the game */
-    void scanMapSlow() {
+    void scanMap() {
         // initialize the movement by getting the E-center coordinates
         // main direction of scanning
         Direction direction;
@@ -434,8 +429,7 @@ public strictfp class RobotPlayer {
             // first move one step forward in this direction
             int movedSteps = 0;
             while (movedSteps < 3) {
-//                if (tryMoveWithCatch(direction).equals("moved")) movedSteps++;
-                if (tryMoveWithCatch(direction)) movedSteps++;
+                if (tryMoveWithCatch(direction).equals("moved")) movedSteps++;
                 System.out.println("I am in the while loop QWQ");
                 System.out.println("moveSteps: "+movedSteps);
                 if (nextPhase != warPhase) return;
@@ -456,91 +450,6 @@ public strictfp class RobotPlayer {
         } catch (Exception e) {
             System.out.println(e);
         }
-    }
-
-    Direction newDirection() throws Exception {
-        System.out.println("in new direction");
-        // if in cool down, stay still
-        while (rc.getCooldownTurns() >= 1) {
-            applyUP();
-            terminateRound();
-        }
-
-        // put all the passability of next two
-        // tiles in all moveable direction in an array
-        ArrayList<Double> moveablePass = new ArrayList<>();
-        ArrayList<Direction> moveableDir = new ArrayList<>();
-        for (int i = 0; i < directions.length; i ++) {
-            Direction dir = directions[i];
-            if (rc.canMove(dir)) {
-                MapLocation adjacent1 = rc.adjacentLocation(dir);
-                MapLocation adjacent2 = adjacent1.add(dir);
-                double passability1 = rc.sensePassability(adjacent1);
-                double passability2 = 0.0;
-                if (rc.onTheMap(adjacent2)) {
-                    passability2 = rc.sensePassability(adjacent2);
-                }
-                double nextTwoPass = passability1 + passability2;
-                moveablePass.add(nextTwoPass);
-                moveableDir.add(dir);
-            }
-        }
-
-        // if all neighbors are occupied stay still
-        while (moveablePass.size() == 0) terminateRound();
-
-        // create an array of directions that have the biggest passability
-        ArrayList<Direction> bestDirs = new ArrayList<>();
-        double maxPass = -1.0;
-        for (int i = 0; i < moveablePass.size(); i ++) {
-            if (moveablePass.get(i) > maxPass) {
-                maxPass = moveablePass.get(i);
-                bestDirs = new ArrayList<>();
-                bestDirs.add(moveableDir.get(i));
-            }
-            if (moveablePass.get(i) == maxPass) bestDirs.add(moveableDir.get(i));
-        }
-
-        // randomly generate one direction among bestDirs
-        int numBestDir = bestDirs.size();
-        int dirIdx = (int) Math.floor(numBestDir * Math.random());
-        System.out.println("new dir:" + dirIdx);
-        return bestDirs.get(dirIdx);
-
-    }
-
-    void scanMapFast() {
-
-        try {
-            Direction direction;
-            MapLocation startLoc = rc.getLocation();
-            direction = motherLoc.directionTo(startLoc);
-
-            while (nextPhase == WarPhase.SEARCH) {
-                int steps = 0;
-                // at most move 10 steps in one direction
-                while (steps < 10) {
-                    // TODO: consider tile color
-                    boolean moved = tryMoveWithCatch(direction);
-                    // if moved successfully, keep going
-                    // if something is blocking the way (wall/robot), change direction
-                    if (moved) {
-                        System.out.println("moved, step++");
-                        steps++;
-                        terminateRound();
-                    }
-                    else {
-                        System.out.println("should change a direction now");
-                        steps = 10;
-                    }
-
-                }
-                direction = newDirection();
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
     }
 
     void pUniversalPrinciple() throws GameActionException {
@@ -571,11 +480,16 @@ public strictfp class RobotPlayer {
         }
     }
 
-    void randomMovement() throws Exception {
+    // TODO: add a while loop to try all 8 directions
+    void randomMovement() throws GameActionException {
         System.out.println("doing random movement");
-        Direction dir = randomDirection();
-        tryMoveWithCatch(dir);
-        terminateRound();
+        if (tryMove(randomDirection())) {
+            turnCount += 1;
+        } else {
+            // if it cannot move in this direction, try to move in another random direction
+        }
+        getFlagFromMom();
+        Clock.yield();
     }
 
     // For Politician bot to move to ECenter
@@ -586,148 +500,12 @@ public strictfp class RobotPlayer {
 
         if (rc.canEmpower(actionRS)) {
             // empower and die gloriously
+            turnCount += 1;
             rc.empower(actionRS);
-            terminateRound();
+            Clock.yield();
         } else {
             // move randomly like a soldier who doesn't know the meaning of his life
             randomMovement();
         }
     }
-
-
-    /**
-     * Main function for moving the slanderer to a parking spot,
-     * i.e. diagonal lines around the e-center
-     */
-    public void parkRobot(MapLocation eCenterLoc) throws GameActionException {
-
-        // According to the direction that the slanderer was built, get an array of general directions
-
-        MapLocation robotLoc = rc.getLocation();
-        Direction initDirection;
-        if (rc.getType() == RobotType.SLANDERER) {
-            initDirection = eCenterLoc.directionTo(robotLoc);
-        } else {
-            initDirection = robotLoc.directionTo(eCenterLoc);
-        }
-        Direction[] generalDirections = getGeneralDirections(initDirection);
-
-        // Pass the 10 frozen round with Clock.yield();
-        while (!moveInGeneralDirection(generalDirections)) {
-            Clock.yield();
-        }
-
-        while (true) {
-            try {
-                System.out.println("I'm trying to park");
-                // Move one step towards the generalDirections
-                moveInGeneralDirection(generalDirections);
-
-                // If the current location is a parking lot, done.
-                if (isParkingLot(rc.getLocation(), eCenterLoc)) return;
-
-                // Try to park to the nearby parking lots
-                if (tryPark(generalDirections, eCenterLoc)) return;
-            } catch (Exception e) {
-                System.out.println(e);
-            }
-        }
-    }
-
-    /**
-     * Move the robot in the general directions for one step.
-     * Start with a random one in the Array, and loop through all of them.
-     * Return if the move was successful.
-     */
-    private boolean moveInGeneralDirection(Direction[] generalDirections) throws GameActionException {
-        int offSet = (int) (Math.random() * 4);
-
-        for (int i = 0; i < 4; i++) {
-            int index = (i + offSet + 4) % 4;
-            Direction dir = generalDirections[index];
-            if (tryMove(dir)) {
-                Clock.yield();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Move the robot to an adjacent parking lot in the general directions.
-     * Return if the move was successful.
-     */
-    private boolean tryPark(Direction[] generalDirections, MapLocation eCenterLoc) throws GameActionException {
-        for (Direction dir: generalDirections) {
-            MapLocation targetLoc = rc.adjacentLocation(dir);
-            if (isParkingLot(targetLoc, eCenterLoc)) {
-                if (rc.canMove(dir)) {
-                    System.out.println("I am heading "+dir+" to "+targetLoc);
-                    rc.move(dir);
-                    Clock.yield();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Return whether the targetLocation is a parkingLot.
-     */
-    private boolean isParkingLot(MapLocation targetLocation, MapLocation eCenterLoc) {
-
-        // Is it on the diagonal?
-        int diff = targetLocation.x + targetLocation.y - eCenterLoc.x - eCenterLoc.y;
-        if (diff % 2 != 0) return false;
-
-        // Is it too close to the E-center?
-        if (targetLocation.isWithinDistanceSquared(eCenterLoc, 2)) return false;
-        System.out.println(targetLocation+" is a parking lot");
-        return true;
-    }
-
-    /**
-     * Return an Array of length 4, which is the four direction next to Direction dir.
-     * e.g. if the initial direction is NORTH, general directions will be NORTH, NORTHEAST, EAST, EASTSOUTH.
-     */
-    private Direction[] getGeneralDirections(Direction dir) {
-        ArrayList<Direction> directionList = new ArrayList<>();
-
-        for (int i = 0; i < 24; i++) {
-            int index = i % 8;
-            directionList.add(directions[index]);
-        }
-
-        int indexOfDir = directionList.indexOf(dir);
-        List<Direction> generalDirectionList = directionList.subList(indexOfDir + 6, indexOfDir + 10);
-        Direction[] generalDirectionArray = new Direction[4];
-        generalDirectionList.toArray(generalDirectionArray);
-
-        return generalDirectionArray;
-    }
-
-    void randomMoveAroundMother() throws Exception {
-        boolean moved = false;
-        while (!moved) {
-            Direction dir = randomDirection();
-            MapLocation nextLoc = rc.adjacentLocation(dir);
-            int distanceSquaredToMom = rc.getLocation().distanceSquaredTo(motherLoc);
-            if (!nextLoc.isWithinDistanceSquared(motherLoc, 20)
-                    && nextLoc.isWithinDistanceSquared(motherLoc, 40)){
-                moved = tryMove(dir);
-            } else if (distanceSquaredToMom > 40) {
-                moveToDestination(motherLoc, 30);
-            } else if (distanceSquaredToMom < 20) {
-                Direction oppoDir = motherLoc.directionTo(rc.getLocation());
-                Direction[] generalOppoDir = getGeneralDirections(oppoDir);
-                moveInGeneralDirection(generalOppoDir);
-            }
-        }
-    }
 }
-
-
-
-
-

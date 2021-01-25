@@ -29,7 +29,7 @@ public class Slanderer extends RobotPlayer {
                 // Move as a politician
                 warPhase = nextPhase;
 
-                if (politicianTurn < 60) {
+                if (politicianTurn < 40) {
                     randomMoveAroundMother();
                     pUniversalPrinciple();
                     politicianTurn++;
