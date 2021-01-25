@@ -217,7 +217,6 @@ public strictfp class RobotPlayer {
     boolean tryMoveWithCatch(Direction dir) throws Exception {
         applyUP();
         // for each step, scan the surrounding first
-        // TODO: make sure this function is called every round
         senseNewEC();
 
 //        Team team = rc.getTeam();
@@ -460,6 +459,7 @@ public strictfp class RobotPlayer {
     Direction newDirection() throws Exception {
         // if in cool down, stay still
         while (rc.getCooldownTurns() >= 1) {
+            applyUP();
             terminateRound();
         }
 
@@ -498,9 +498,7 @@ public strictfp class RobotPlayer {
 
         // randomly generate one direction among bestDirs
         int numBestDir = bestDirs.size();
-        System.out.println("numbestdir" + numBestDir);
         int dirIdx = (int) Math.floor(numBestDir * Math.random());
-        System.out.println("next index" + dirIdx);
         return bestDirs.get(dirIdx);
 
     }
